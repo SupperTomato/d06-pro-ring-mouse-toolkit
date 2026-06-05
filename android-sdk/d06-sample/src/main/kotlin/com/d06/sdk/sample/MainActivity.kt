@@ -6,11 +6,13 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.widget.ScrollView
 import android.widget.TextView
+import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
-import com.d06.sdk.input.D06InputDecoder
 
 class MainActivity : Activity() {
-    private val decoder = D06InputDecoder(D06InputConfig(detectMousepadTap = true))
+    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+        append(event.toString())
+    }
     private lateinit var logView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,36 +26,14 @@ class MainActivity : Activity() {
     }
 
     override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
-        val events = decoder.onMotionEvent(ev)
-        if (events.isNotEmpty()) {
-            append("motion ${deviceLabel(ev)} ${events.joinToString()}")
-            return true
-        }
-        return super.dispatchGenericMotionEvent(ev)
+        return d06.dispatch(ev) || super.dispatchGenericMotionEvent(ev)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val events = decoder.onKeyEvent(event)
-        if (events.isNotEmpty()) {
-            append("key ${deviceLabel(event)} ${events.joinToString()}")
-            return true
-        }
-        return super.dispatchKeyEvent(event)
+        return d06.dispatch(event) || super.dispatchKeyEvent(event)
     }
 
     private fun append(line: String) {
         logView.append("$line\n")
-    }
-
-    private fun deviceLabel(event: MotionEvent): String {
-        val device = event.device ?: return "[unknown-device]"
-        val match = if (decoder.isD06Device(device)) "D06" else "other"
-        return "[$match ${device.name} vid=${device.vendorId} pid=${device.productId}]"
-    }
-
-    private fun deviceLabel(event: KeyEvent): String {
-        val device = event.device ?: return "[unknown-device]"
-        val match = if (decoder.isD06Device(device)) "D06" else "other"
-        return "[$match ${device.name} vid=${device.vendorId} pid=${device.productId}]"
     }
 }

@@ -86,39 +86,36 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
-import com.d06.sdk.input.D06InputDecoder
 
 class MainActivity : Activity() {
-    private val d06 = D06InputDecoder(
-        D06InputConfig(detectMousepadTap = true)
-    )
+    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+        // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
+    }
 
     override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
-        val events = d06.onMotionEvent(ev)
-        if (events.isNotEmpty()) {
-            events.forEach { event ->
-                // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
-            }
-            return true
-        }
-        return super.dispatchGenericMotionEvent(ev)
+        return d06.dispatch(ev) || super.dispatchGenericMotionEvent(ev)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val events = d06.onKeyEvent(event)
-        if (events.isNotEmpty()) {
-            events.forEach { d06Event ->
-                // Handle keyboard or consumer-control events.
-            }
-            return true
-        }
-        return super.dispatchKeyEvent(event)
+        return d06.dispatch(event) || super.dispatchKeyEvent(event)
     }
 }
 ```
 
 Use `d06.isD06Device(inputDevice)` to check whether Android metadata matches the known D06 name or VID/PID.
+
+`D06Input` only consumes events from recognized D06 device metadata, or from events where Android does not expose device metadata. If your device appears under a different name/VID/PID, add it to `D06InputConfig`.
+
+For advanced integrations that need the decoded list instead of a callback, use `D06InputDecoder` directly.
+
+The matcher recognizes both known D06 paths:
+
+- Bluetooth HID: VID/PID `248a:0101`, names containing `D06` or `D06 Pro`
+- 2.4 GHz USB receiver through USB-OTG: VID/PID `248a:0401`, names containing `TK Wireless Receiver`
+
+The USB receiver path is decoded from normal Android `MotionEvent` / `KeyEvent` input. It does not use the BLE module and does not need Bluetooth permissions.
 
 ## Read BLE Metadata
 
