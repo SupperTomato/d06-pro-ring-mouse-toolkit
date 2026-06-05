@@ -1,6 +1,7 @@
 plugins {
     id("com.android.library")
     kotlin("android")
+    id("maven-publish")
 }
 
 android {
@@ -16,6 +17,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+        }
+    }
 }
 
 kotlin {
@@ -26,4 +33,15 @@ dependencies {
     api(project(":d06-core"))
     testImplementation(kotlin("test-junit"))
     testImplementation("junit:junit:4.13.2")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("release") {
+            artifactId = "d06-input"
+            afterEvaluate {
+                from(components["release"])
+            }
+        }
+    }
 }

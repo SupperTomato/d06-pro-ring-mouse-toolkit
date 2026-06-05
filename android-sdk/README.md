@@ -55,6 +55,16 @@ Request the permission at runtime before calling BLE connect/discover/read APIs.
 ./gradlew test assembleDebug
 ```
 
+## Publish Locally Or Use JitPack
+
+Library modules are configured with Gradle `maven-publish`:
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+For JitPack, create a GitHub release or tag, then depend on the modules from `https://jitpack.io` using the tag or commit hash.
+
 ## Add The SDK To An App
 
 The modules are source-based. Add the modules to your app's `settings.gradle.kts`:
@@ -86,11 +96,23 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
     }
 
@@ -109,6 +131,35 @@ Use `d06.isD06Device(inputDevice)` to check whether Android metadata matches the
 `D06Input` only consumes events from recognized D06 device metadata, or from events where Android does not expose device metadata. If your device appears under a different name/VID/PID, add it to `D06InputConfig`.
 
 For advanced integrations that need the decoded list instead of a callback, use `D06InputDecoder` directly.
+
+## Remap Presets
+
+```kotlin
+import com.d06.sdk.core.D06Event
+import com.d06.sdk.remapper.D06RemapAction
+import com.d06.sdk.remapper.D06RemapPreset
+import com.d06.sdk.remapper.D06Remapper
+
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+
+val remapper = D06Remapper(preset)
+val action = remapper.actionFor(D06Event.MousepadTap)
+```
+
+Built-in presets: `D06RemapPresets.Accessibility`, `Presentation`, `Media`, `MouseOnly`.
+
+Use `D06RemapValidator.validateForAccessibilityService(preset)` before sending actions to `D06AccessibilityRemapperService`; app-handled key actions cannot be executed directly by AccessibilityService.
+
+## Diagnostics
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
+
+The diagnostics helper keeps a bounded decoded-event history with input-device metadata.
 
 The matcher recognizes both known D06 paths:
 

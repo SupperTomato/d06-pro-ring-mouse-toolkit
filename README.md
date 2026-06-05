@@ -119,11 +119,23 @@ Decode D06 input in an `Activity`:
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
     }
 
@@ -146,6 +158,30 @@ val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
 `D06Input` only consumes events from recognized D06 device metadata, or from events where Android does not expose device metadata. If your device appears under a different name/VID/PID, add it to `D06InputConfig`.
 
 For advanced integrations that need the decoded list instead of a callback, use `D06InputDecoder` directly.
+
+Use `d06-remapper` for profile-based remapping:
+
+```kotlin
+import com.d06.sdk.core.D06Event
+import com.d06.sdk.remapper.D06RemapAction
+import com.d06.sdk.remapper.D06RemapPreset
+import com.d06.sdk.remapper.D06Remapper
+
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+val remapper = D06Remapper(preset)
+val action = remapper.actionFor(D06Event.MousepadTap)
+```
+
+Built-in presets are available as `D06RemapPresets.Accessibility`, `Presentation`, `Media`, and `MouseOnly`. `D06RemapValidator.validateForAccessibilityService(preset)` reports actions that an AccessibilityService cannot execute directly.
+
+Diagnostics can be exported as JSON Lines:
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
 
 The matcher recognizes both known paths:
 
@@ -213,7 +249,18 @@ Or pass a node explicitly:
 python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
 ```
 
+Apply a Linux transform/remap profile:
+
+```bash
+python3 tools/linux/d06_evdev.py --profile tools/linux/d06-profile.example.json --seconds 30
+```
+
 Reading `/dev/input/event*` usually requires root, an `input` group membership, or a udev rule. The first Linux milestone only decodes and prints events; it does not grab the device, suppress normal mouse behavior, or emit replacement input.
+
+Templates:
+
+- `tools/linux/99-d06-pro.rules`
+- `tools/linux/d06-evdev.service`
 
 ## Reverse Engineering Tools
 

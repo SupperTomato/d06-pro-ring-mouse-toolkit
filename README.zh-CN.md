@@ -119,11 +119,23 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等事件。
     }
 
@@ -146,6 +158,24 @@ val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
 `D06Input` 只会消费已识别的 D06 设备元数据，或 Android 没有暴露设备元数据的事件。如果你的设备显示为不同名称/VID/PID，把它加到 `D06InputConfig`。
 
 如果高级集成需要拿到解码后的事件列表而不是回调，可以直接使用 `D06InputDecoder`。
+
+`d06-remapper` 支持自定义 preset：
+
+```kotlin
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+val action = D06Remapper(preset).actionFor(D06Event.MousepadTap)
+```
+
+内置 preset：`Accessibility`、`Presentation`、`Media`、`MouseOnly`。`D06RemapValidator.validateForAccessibilityService(preset)` 可检查 AccessibilityService 不能直接执行的动作。
+
+诊断日志可导出 JSON Lines：
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
 
 匹配器会识别两条已知路径：
 

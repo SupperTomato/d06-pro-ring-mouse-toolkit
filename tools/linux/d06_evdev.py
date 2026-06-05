@@ -63,11 +63,80 @@ class LinuxInputDevice:
     match_reasons: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class D06EvdevProfile:
+    invert_x: bool = False
+    invert_y: bool = False
+    movement_sensitivity: float = 1.0
+    scroll_sensitivity: float = 1.0
+    movement_deadzone: int = 0
+    remap: dict[str, dict[str, Any]] | None = None
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "D06EvdevProfile":
+        transform = payload.get("transform") or {}
+        return cls(
+            invert_x=bool(transform.get("invert_x", False)),
+            invert_y=bool(transform.get("invert_y", False)),
+            movement_sensitivity=float(transform.get("movement_sensitivity", 1.0)),
+            scroll_sensitivity=float(transform.get("scroll_sensitivity", 1.0)),
+            movement_deadzone=int(transform.get("movement_deadzone", 0)),
+            remap=dict(payload.get("remap") or {}),
+        )
+
+    def apply(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        transformed = self._transform(payload)
+        if transformed is None:
+            return None
+        return self._remap(transformed)
+
+    def _transform(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        event = payload.get("event")
+        if event == "MousepadMove":
+            return self._transform_move(payload)
+        if event in {"Scroll", "HorizontalScroll"}:
+            return self._transform_scroll(payload)
+        return dict(payload)
+
+    def _transform_move(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        dx = self._transform_axis(int(payload.get("dx", 0)), self.invert_x)
+        dy = self._transform_axis(int(payload.get("dy", 0)), self.invert_y)
+        if dx == 0 and dy == 0:
+            return None
+        transformed = dict(payload)
+        transformed["dx"] = dx
+        transformed["dy"] = dy
+        return transformed
+
+    def _transform_axis(self, value: int, invert: bool) -> int:
+        if abs(value) <= self.movement_deadzone:
+            return 0
+        signed = -value if invert else value
+        return round(signed * self.movement_sensitivity)
+
+    def _transform_scroll(self, payload: dict[str, Any]) -> dict[str, Any] | None:
+        if self.scroll_sensitivity == 0:
+            return None
+        units = payload.get("units", 0)
+        scaled = max(1, round(float(units) * self.scroll_sensitivity))
+        transformed = dict(payload)
+        transformed["units"] = scaled
+        return transformed
+
+    def _remap(self, payload: dict[str, Any]) -> dict[str, Any]:
+        remap = self.remap or {}
+        for key in _profile_keys(payload):
+            if key in remap:
+                return dict(remap[key])
+        return payload
+
+
 class D06EvdevTranslator:
     """Stateful translator from Linux evdev frames to D06 event dictionaries."""
 
-    def __init__(self, hi_res_detent: int = 120) -> None:
+    def __init__(self, hi_res_detent: int = 120, profile: D06EvdevProfile | None = None) -> None:
         self.hi_res_detent = hi_res_detent
+        self.profile = profile or D06EvdevProfile()
         self._dx = 0
         self._dy = 0
         self._wheel = 0
@@ -79,7 +148,7 @@ class D06EvdevTranslator:
     def process(self, event: EvdevEvent, source: str | None = None) -> list[dict[str, Any]]:
         if event.event_type == EV_KEY:
             decoded = self._key_event(event)
-            return [self._with_common(decoded, source, event.timestamp)] if decoded else []
+            return self._finalize([decoded], source, event.timestamp) if decoded else []
         if event.event_type == EV_REL:
             self._relative_event(event)
             return []
@@ -128,7 +197,7 @@ class D06EvdevTranslator:
             decoded.append({"event": "MousepadMove", "dx": self._dx, "dy": self._dy})
         decoded.extend(self._wheel_events())
         self._reset_frame()
-        return [self._with_common(item, source, event_timestamp) for item in decoded]
+        return self._finalize(decoded, source, event_timestamp)
 
     def _wheel_events(self) -> list[dict[str, Any]]:
         decoded: list[dict[str, Any]] = []
@@ -156,7 +225,14 @@ class D06EvdevTranslator:
         self._wheel_hi_res = 0
         self._hwheel_hi_res = 0
         self._frame_timestamp = None
-        self._frame_has_click_button_event = False
+
+    def _finalize(self, payloads: list[dict[str, Any]], source: str | None, timestamp: float) -> list[dict[str, Any]]:
+        decoded: list[dict[str, Any]] = []
+        for payload in payloads:
+            transformed = self.profile.apply(payload)
+            if transformed is not None:
+                decoded.append(self._with_common(transformed, source, timestamp))
+        return decoded
 
     @staticmethod
     def _with_common(payload: dict[str, Any], source: str | None, timestamp: float) -> dict[str, Any]:
@@ -169,6 +245,10 @@ class D06EvdevTranslator:
 
 def event_to_json(payload: dict[str, Any]) -> str:
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=True) + "\n"
+
+
+def load_profile(path: Path) -> D06EvdevProfile:
+    return D06EvdevProfile.from_dict(json.loads(path.read_text()))
 
 
 def parse_input_devices(proc_text: str) -> list[LinuxInputDevice]:
@@ -230,8 +310,8 @@ def decode_event_bytes(data: bytes) -> list[EvdevEvent]:
     return events
 
 
-def stream_nodes(nodes: list[str], seconds: float | None) -> int:
-    translators = {node: D06EvdevTranslator() for node in nodes}
+def stream_nodes(nodes: list[str], seconds: float | None, profile: D06EvdevProfile | None = None) -> int:
+    translators = {node: D06EvdevTranslator(profile=profile) for node in nodes}
     fds: dict[int, str] = {}
     for node in nodes:
         fds[os.open(node, os.O_RDONLY | os.O_NONBLOCK)] = node
@@ -270,6 +350,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--match", action="append", default=[], help="Select nodes whose /proc input block contains this term")
     parser.add_argument("--seconds", type=float, default=None, help="Stop after this many seconds")
     parser.add_argument("--jsonl", action="store_true", help="Emit JSON Lines; currently the default stream format")
+    parser.add_argument("--profile", type=Path, default=None, help="Apply transform/remap JSON profile")
     args = parser.parse_args(argv)
 
     devices = load_input_devices()
@@ -280,7 +361,21 @@ def main(argv: list[str] | None = None) -> int:
     nodes = args.node or select_nodes(devices, args.match)
     if not nodes:
         raise SystemExit("no D06 input event nodes matched; use --list or pass --node /dev/input/eventX")
-    return stream_nodes(nodes, args.seconds)
+    profile = load_profile(args.profile) if args.profile is not None else None
+    return stream_nodes(nodes, args.seconds, profile)
+
+
+def _profile_keys(payload: dict[str, Any]) -> list[str]:
+    event = str(payload.get("event", ""))
+    keys: list[str] = []
+    if event in {"Scroll", "HorizontalScroll"} and "direction" in payload:
+        keys.append(f"{event}.{payload['direction']}")
+    if event == "UnknownButton" and "code" in payload:
+        state = "down" if payload.get("pressed") else "up"
+        keys.append(f"UnknownButton.{payload['code']}.{state}")
+        keys.append(f"UnknownButton.{payload['code']}")
+    keys.append(event)
+    return keys
 
 
 def _match_text(pattern: str, text: str) -> str | None:
