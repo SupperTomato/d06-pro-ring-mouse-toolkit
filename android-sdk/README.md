@@ -2,6 +2,8 @@
 
 Kotlin Android SDK for the D06 Pro ring mouse.
 
+This SDK decodes D06 Pro events in Android apps that receive the device's input stream. It also exposes BLE/GATT metadata helpers and a constrained AccessibilityService remapper helper. It does not replace Android's system HID driver.
+
 ## Modules
 
 - `d06-core`: pure Kotlin event model and verified D06 mapping logic.
@@ -50,6 +52,84 @@ Request the permission at runtime before calling BLE connect/discover/read APIs.
 ```bash
 ./gradlew test assembleDebug
 ```
+
+## Add The SDK To An App
+
+The modules are source-based. Add the modules to your app's `settings.gradle.kts`:
+
+```kotlin
+include(":d06-core")
+project(":d06-core").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-core")
+
+include(":d06-input")
+project(":d06-input").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-input")
+
+include(":d06-ble")
+project(":d06-ble").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-ble")
+```
+
+Then depend on the modules you need:
+
+```kotlin
+dependencies {
+    implementation(project(":d06-core"))
+    implementation(project(":d06-input"))
+    implementation(project(":d06-ble"))
+}
+```
+
+## Decode Input
+
+```kotlin
+import android.app.Activity
+import android.view.KeyEvent
+import android.view.MotionEvent
+import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDecoder
+
+class MainActivity : Activity() {
+    private val d06 = D06InputDecoder(
+        D06InputConfig(detectMousepadTap = true)
+    )
+
+    override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
+        val events = d06.onMotionEvent(ev)
+        if (events.isNotEmpty()) {
+            events.forEach { event ->
+                // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
+            }
+            return true
+        }
+        return super.dispatchGenericMotionEvent(ev)
+    }
+
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val events = d06.onKeyEvent(event)
+        if (events.isNotEmpty()) {
+            events.forEach { d06Event ->
+                // Handle keyboard or consumer-control events.
+            }
+            return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+}
+```
+
+Use `d06.isD06Device(inputDevice)` to check whether Android metadata matches the known D06 name or VID/PID.
+
+## Read BLE Metadata
+
+```kotlin
+import com.d06.sdk.ble.D06BleClient
+
+val client = D06BleClient(context)
+client.connect(bluetoothDevice)
+
+// Observe client.state for service profile and battery-level updates.
+```
+
+The BLE module is for service discovery and battery reads. It intentionally avoids vendor-service writes.
 
 ## Manual Validation
 
