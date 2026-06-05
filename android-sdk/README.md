@@ -1,5 +1,7 @@
 # D06 Android SDK
 
+Language: English | [简体中文](README.zh-CN.md)
+
 Kotlin Android SDK for the D06 Pro ring mouse.
 
 This SDK decodes D06 Pro events in Android apps that receive the device's input stream. It also exposes BLE/GATT metadata helpers and a constrained AccessibilityService remapper helper. It does not replace Android's system HID driver.

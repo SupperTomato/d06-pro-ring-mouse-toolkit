@@ -1,5 +1,7 @@
 # D06 Pro Ring Mouse
 
+Language: English | [简体中文](README.zh-CN.md)
+
 Reverse-engineering notes, capture tools, and a Kotlin Android SDK for the D06 Pro Bluetooth ring mouse.
 
 The D06 Pro presents itself as a Bluetooth HID device with mouse, keyboard, and consumer-control collections. This repository documents the observed HID/BLE behavior and packages the confirmed mappings into Android SDK modules that can decode D06 events inside an Android app.
