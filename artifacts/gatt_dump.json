@@ -1,0 +1,167 @@
+﻿{
+    "address":  "D10BCB55CA78",
+    "name":  "D06 Pro",
+    "bluetoothAddress":  229848586242680,
+    "connectionStatus":  "Connected",
+    "services":  [
+                     {
+                         "uuid":  "00001800-0000-1000-8000-00805f9b34fb",
+                         "name":  "Generic Access",
+                         "attributeHandle":  1,
+                         "characteristics":  [
+                                                 {
+                                                     "uuid":  "00002a00-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "Device Name",
+                                                     "attributeHandle":  2,
+                                                     "properties":  "Read, Write",
+                                                     "descriptors":  [
+
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 },
+                                                 {
+                                                     "uuid":  "00002a01-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "Appearance",
+                                                     "attributeHandle":  4,
+                                                     "properties":  "Read",
+                                                     "descriptors":  [
+
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 },
+                                                 {
+                                                     "uuid":  "00002a04-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "Peripheral Preferred Connection Parameters",
+                                                     "attributeHandle":  6,
+                                                     "properties":  "Read",
+                                                     "descriptors":  [
+
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 }
+                                             ]
+                     },
+                     {
+                         "uuid":  "00001801-0000-1000-8000-00805f9b34fb",
+                         "name":  "Generic Attribute",
+                         "attributeHandle":  8,
+                         "characteristics":  [
+
+                                             ]
+                     },
+                     {
+                         "uuid":  "0000180a-0000-1000-8000-00805f9b34fb",
+                         "name":  "Device Information",
+                         "attributeHandle":  9,
+                         "characteristics":  [
+                                                 {
+                                                     "uuid":  "00002a50-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "PnP ID",
+                                                     "attributeHandle":  10,
+                                                     "properties":  "Read",
+                                                     "descriptors":  [
+
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 }
+                                             ]
+                     },
+                     {
+                         "uuid":  "0000180f-0000-1000-8000-00805f9b34fb",
+                         "name":  "Battery Service",
+                         "attributeHandle":  12,
+                         "characteristics":  [
+                                                 {
+                                                     "uuid":  "00002a19-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "Battery Level",
+                                                     "attributeHandle":  13,
+                                                     "properties":  "Read, Notify",
+                                                     "descriptors":  [
+                                                                         {
+                                                                             "uuid":  "00002902-0000-1000-8000-00805f9b34fb",
+                                                                             "name":  "Client Characteristic Configuration",
+                                                                             "attributeHandle":  15,
+                                                                             "readStatus":  "Success",
+                                                                             "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\""
+                                                                         }
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 }
+                                             ]
+                     },
+                     {
+                         "uuid":  "00010203-0405-0607-0809-0a0b0c0d1912",
+                         "name":  "",
+                         "attributeHandle":  16,
+                         "characteristics":  [
+                                                 {
+                                                     "uuid":  "00010203-0405-0607-0809-0a0b0c0d2b12",
+                                                     "name":  "",
+                                                     "attributeHandle":  17,
+                                                     "properties":  "Read, WriteWithoutResponse",
+                                                     "descriptors":  [
+
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 },
+                                                 {
+                                                     "uuid":  "f51c527c-79bb-70bb-8b42-d234b6818e38",
+                                                     "name":  "",
+                                                     "attributeHandle":  19,
+                                                     "properties":  "Read, WriteWithoutResponse, Notify",
+                                                     "descriptors":  [
+                                                                         {
+                                                                             "uuid":  "00002902-0000-1000-8000-00805f9b34fb",
+                                                                             "name":  "Client Characteristic Configuration",
+                                                                             "attributeHandle":  21,
+                                                                             "readStatus":  "Success",
+                                                                             "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\""
+                                                                         }
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 },
+                                                 {
+                                                     "uuid":  "0000feff-0000-1000-8000-00805f9b34fb",
+                                                     "name":  "",
+                                                     "attributeHandle":  22,
+                                                     "properties":  "Read, WriteWithoutResponse, Notify",
+                                                     "descriptors":  [
+                                                                         {
+                                                                             "uuid":  "00002902-0000-1000-8000-00805f9b34fb",
+                                                                             "name":  "Client Characteristic Configuration",
+                                                                             "attributeHandle":  24,
+                                                                             "readStatus":  "Success",
+                                                                             "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\""
+                                                                         }
+                                                                     ],
+                                                     "readStatus":  "Success",
+                                                     "readError":  "Cannot convert argument \"buffer\", with value: \"System.__ComObject\", for \"CopyToByteArray\" to type \"Windows.Storage.Streams.IBuffer\": \"Cannot convert the \"System.__ComObject\" value of type \"System.__ComObject\" to type \"Windows.Storage.Streams.IBuffer\".\"",
+                                                     "descriptorStatus":  "Success"
+                                                 }
+                                             ]
+                     },
+                     {
+                         "uuid":  "00001812-0000-1000-8000-00805f9b34fb",
+                         "name":  "Human Interface Device",
+                         "attributeHandle":  25,
+                         "characteristics":  [
+
+                                             ],
+                         "characteristicsError":  "AccessDenied"
+                     }
+                 ]
+}

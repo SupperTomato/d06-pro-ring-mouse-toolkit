@@ -1,0 +1,35 @@
+﻿[
+    {
+        "Label":  "keyboard",
+        "Path":  "\\\\?\\HID#{00001812-0000-1000-8000-00805f9b34fb}_Dev_VID\u002602248a_PID\u00260101_REV\u00260001_d10bcb55ca78\u0026Col01#9\u00262bbdcd7b\u00260\u00260000#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+        "ReportLength":  9,
+        "Opened":  false,
+        "LastError":  5,
+        "Error":  "Access is denied",
+        "Events":  [
+
+                   ]
+    },
+    {
+        "Label":  "consumer",
+        "Path":  "\\\\?\\HID#{00001812-0000-1000-8000-00805f9b34fb}_Dev_VID\u002602248a_PID\u00260101_REV\u00260001_d10bcb55ca78\u0026Col02#9\u00262bbdcd7b\u00260\u00260001#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+        "ReportLength":  3,
+        "Opened":  true,
+        "LastError":  0,
+        "Error":  null,
+        "Events":  [
+
+                   ]
+    },
+    {
+        "Label":  "mouse",
+        "Path":  "\\\\?\\HID#{00001812-0000-1000-8000-00805f9b34fb}_Dev_VID\u002602248a_PID\u00260101_REV\u00260001_d10bcb55ca78\u0026Col03#9\u00262bbdcd7b\u00260\u00260002#{4d1e55b2-f16f-11cf-88cb-001111000030}",
+        "ReportLength":  7,
+        "Opened":  false,
+        "LastError":  5,
+        "Error":  "Access is denied",
+        "Events":  [
+
+                   ]
+    }
+]
