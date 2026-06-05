@@ -86,39 +86,36 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
-import com.d06.sdk.input.D06InputDecoder
 
 class MainActivity : Activity() {
-    private val d06 = D06InputDecoder(
-        D06InputConfig(detectMousepadTap = true)
-    )
+    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+        // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等。
+    }
 
     override fun dispatchGenericMotionEvent(ev: MotionEvent): Boolean {
-        val events = d06.onMotionEvent(ev)
-        if (events.isNotEmpty()) {
-            events.forEach { event ->
-                // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等。
-            }
-            return true
-        }
-        return super.dispatchGenericMotionEvent(ev)
+        return d06.dispatch(ev) || super.dispatchGenericMotionEvent(ev)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val events = d06.onKeyEvent(event)
-        if (events.isNotEmpty()) {
-            events.forEach { d06Event ->
-                // 处理键盘或消费者控制事件。
-            }
-            return true
-        }
-        return super.dispatchKeyEvent(event)
+        return d06.dispatch(event) || super.dispatchKeyEvent(event)
     }
 }
 ```
 
 使用 `d06.isD06Device(inputDevice)` 检查 Android 元数据是否匹配已知的 D06 名称或 VID/PID。
+
+`D06Input` 只会消费已识别的 D06 设备元数据，或 Android 没有暴露设备元数据的事件。如果你的设备显示为不同名称/VID/PID，把它加到 `D06InputConfig`。
+
+如果高级集成需要拿到解码后的事件列表而不是回调，可以直接使用 `D06InputDecoder`。
+
+匹配器会识别两条已知 D06 路径：
+
+- Bluetooth HID：VID/PID `248a:0101`，名称包含 `D06` 或 `D06 Pro`
+- 通过 USB-OTG 使用的 2.4 GHz USB 接收器：VID/PID `248a:0401`，名称包含 `TK Wireless Receiver`
+
+USB 接收器路径从普通 Android `MotionEvent` / `KeyEvent` 输入中解码。它不使用 BLE 模块，也不需要蓝牙权限。
 
 ## 读取 BLE 元数据
 
