@@ -1,5 +1,7 @@
 # Plain-Language Function Guide
 
+Language: English | [简体中文](FUNCTIONS.zh-CN.md)
+
 This guide explains what each user-facing part of the D06 Pro Ring Mouse Toolkit can do.
 
 In this file, "function" means both:

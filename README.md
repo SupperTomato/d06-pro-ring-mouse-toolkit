@@ -6,7 +6,9 @@ This project helps people understand and use the D06 Pro ring mouse on Android a
 
 Plain English: the D06 Pro behaves like a small Bluetooth or USB mouse. This repo records what each button and gesture sends, provides an Android SDK/sample app, and includes Linux tools for checking what the ring mouse is doing.
 
-For a plain-language list of what each SDK part, command, and event can do, see [FUNCTIONS.md](FUNCTIONS.md).
+For a plain-language list of what each SDK part, command, and event can do, see [FUNCTIONS.md](FUNCTIONS.md) or [简体中文](FUNCTIONS.zh-CN.md).
+
+For SDK performance advice, see [PERFORMANCE.md](PERFORMANCE.md) or [简体中文](PERFORMANCE.zh-CN.md).
 
 ## Who This Is For
 
@@ -178,7 +180,8 @@ tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/in
 | `android-sdk/` | Android SDK modules and sample app |
 | `tools/` | Linux and Android capture tools |
 | `artifacts/` | grouped capture data from Android, Linux, and historical host captures |
-| `FUNCTIONS.md` | plain-language guide to toolkit functions and features |
+| `FUNCTIONS.md` / `FUNCTIONS.zh-CN.md` | plain-language guide to toolkit functions and features |
+| `PERFORMANCE.md` / `PERFORMANCE.zh-CN.md` | SDK performance optimization guide |
 | `D06_PRO_RE.md` | detailed reverse-engineering notes |
 | `docs/research/` | SDK feature research |
 | `docs/superpowers/` | implementation specs and plans |
