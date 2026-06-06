@@ -10,7 +10,7 @@ D06 Pro 在主机上表现为一个 Bluetooth HID 设备，包含鼠标、键盘
 
 - 记录 D06 Pro 的蓝牙身份信息、GATT 服务、HID 集合和实际运行行为。
 - 映射已经确认的控制：左键、右键、中键、上/下滚动、鼠标板移动、鼠标板点击、双击，以及目前观察到的长按行为。
-- 提供 Windows PowerShell 工具，用于采集 BLE/GATT、HID caps 和 Raw Input 事件。
+- 提供 Linux 和 Android 采集工具，用于 BLE/GATT、HID descriptor、`evdev`、`hidraw` 和 `adb getevent`。
 - 提供 Android SDK，包括纯 Kotlin 映射器、Android `MotionEvent` / `KeyEvent` 适配器、BLE 元数据客户端、受限的重映射辅助模块和示例应用。
 - 提供 Linux `evdev` 转换器，把 `/dev/input/event*` 鼠标事件映射为同一套 D06 标准事件名。
 - 保留采集数据，方便后续对照原始数据继续确认新的映射。
@@ -23,7 +23,7 @@ D06 Pro 在主机上表现为一个 Bluetooth HID 设备，包含鼠标、键盘
 | --- | --- |
 | `D06_PRO_RE.md` | 详细逆向工程报告和功能审计 |
 | `artifacts/` | 已标注的 Raw Input、HID 和 GATT 采集数据 |
-| `tools/` | Windows PowerShell 采集/枚举脚本，以及 Linux `evdev` 转换器 |
+| `tools/` | Linux 和 Android 采集/枚举脚本 |
 | `android-sdk/` | 多模块 Kotlin/Android SDK 和示例应用 |
 | `docs/superpowers/specs/` | SDK 设计说明 |
 | `docs/superpowers/plans/` | 构建 SDK 时使用的实现计划 |
@@ -119,11 +119,23 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等事件。
     }
 
@@ -146,6 +158,24 @@ val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
 `D06Input` 只会消费已识别的 D06 设备元数据，或 Android 没有暴露设备元数据的事件。如果你的设备显示为不同名称/VID/PID，把它加到 `D06InputConfig`。
 
 如果高级集成需要拿到解码后的事件列表而不是回调，可以直接使用 `D06InputDecoder`。
+
+`d06-remapper` 支持自定义 preset：
+
+```kotlin
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+val action = D06Remapper(preset).actionFor(D06Event.MousepadTap)
+```
+
+内置 preset：`Accessibility`、`Presentation`、`Media`、`MouseOnly`。`D06RemapValidator.validateForAccessibilityService(preset)` 可检查 AccessibilityService 不能直接执行的动作。
+
+诊断日志可导出 JSON Lines：
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
 
 匹配器会识别两条已知路径：
 
@@ -217,13 +247,24 @@ python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
 
 ## 逆向工程工具
 
-在 Windows PowerShell 中运行，前提是 D06 Pro 已经配对：
+Linux 工具：
 
-```powershell
-.\tools\dump_d06_gatt.ps1
-.\tools\dump_hid_caps.ps1
-.\tools\list_raw_input_devices.ps1
-.\tools\capture_raw_input.ps1 -Seconds 10
+```bash
+python3 tools/linux/d06_evdev.py --list
+python3 tools/linux/d06_evdev.py --seconds 10
+python3 tools/linux/d06_hid.py --list
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
+sudo python3 tools/linux/d06_hid.py --capture --seconds 10
+python3 -m pip install bleak
+python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+```
+
+Android 工具，需要在已开启 USB 或无线调试的 Linux 主机上运行：
+
+```bash
+tools/android/d06_android_input.sh list
+tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
 ```
 
 这些采集可以用于：
@@ -246,9 +287,8 @@ python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
 
 已完成：
 
-- Windows BLE/GATT 枚举
-- Windows HID collection/caps 解析
-- 已知控制的 Windows Raw Input 采集
+- 历史 BLE/GATT 枚举和 HID collection/caps 解析
+- 已知控制的历史输入采集
 - Android SDK 构建和单元测试
 - Android 示例应用 debug 构建
 
@@ -256,6 +296,7 @@ python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
 
 - 使用示例应用在真实 Android 设备上进行验证
 - 采集 D06 在具体手机/平板上的 Android 元数据
+- 在带蓝牙或 USB 接收器的 Linux 主机上实时验证 `evdev`/`hidraw`
 - 测试采集过程中未看到或未激活的控制
 
 ## 安全说明

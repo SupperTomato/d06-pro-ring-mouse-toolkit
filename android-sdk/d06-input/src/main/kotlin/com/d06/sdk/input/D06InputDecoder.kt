@@ -4,6 +4,7 @@ import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import com.d06.sdk.core.D06Event
+import com.d06.sdk.core.D06EventTransformer
 import com.d06.sdk.core.D06Mapper
 import com.d06.sdk.core.D06RawMouse
 import com.d06.sdk.core.KeyAction
@@ -13,7 +14,11 @@ import kotlin.math.roundToInt
 
 class D06InputDecoder(
     private val config: D06InputConfig = D06InputConfig(),
-    private val mapper: D06Mapper = D06Mapper(detectMousepadTap = config.detectMousepadTap)
+    private val mapper: D06Mapper = D06Mapper(
+        detectMousepadTap = config.detectMousepadTap,
+        tapWindowMillis = config.tapWindowMillis
+    ),
+    private val transformer: D06EventTransformer = D06EventTransformer(config.eventTransform)
 ) {
     private val matcher = D06InputDeviceMatcher(config)
     private var lastPointerX: Float? = null
@@ -32,7 +37,7 @@ class D06InputDecoder(
             dy = dy,
             timestampMillis = event.eventTime
         )
-        return mapper.mapRaw(raw)
+        return transformer.transform(mapper.mapRaw(raw))
     }
 
     fun onKeyEvent(event: KeyEvent): List<D06Event> {
@@ -42,11 +47,13 @@ class D06InputDecoder(
             else -> return emptyList()
         }
 
-        return listOf(
-            D06Event.Key(
-                keyCode = event.keyCode,
-                scanCode = event.scanCode,
-                action = action
+        return transformer.transform(
+            listOf(
+                D06Event.Key(
+                    keyCode = event.keyCode,
+                    scanCode = event.scanCode,
+                    action = action
+                )
             )
         )
     }

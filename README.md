@@ -10,7 +10,7 @@ The D06 Pro presents itself as a Bluetooth HID device with mouse, keyboard, and 
 
 - Documents the D06 Pro Bluetooth identity, GATT services, HID collections, and observed runtime behavior.
 - Maps verified controls: left click, right click, middle click, scroll up/down, mousepad motion, mousepad tap, double tap, and long press behavior observed so far.
-- Provides Windows PowerShell capture tools for BLE/GATT, HID caps, and Raw Input events.
+- Provides Linux and Android capture tools for BLE/GATT, HID descriptors, `evdev`, `hidraw`, and `adb getevent`.
 - Provides an Android SDK with a pure Kotlin mapper, Android `MotionEvent` / `KeyEvent` adapter, BLE metadata client, constrained remapper helper, and sample app.
 - Provides a Linux `evdev` translator that maps `/dev/input/event*` mouse events into the same canonical D06 event names.
 - Keeps capture artifacts so future mappings can be checked against the original data.
@@ -23,7 +23,7 @@ This project does not flash firmware, modify the mouse, or write to the vendor/T
 | --- | --- |
 | `D06_PRO_RE.md` | Detailed reverse-engineering report and feature audit |
 | `artifacts/` | Labeled Raw Input, HID, and GATT capture data |
-| `tools/` | Windows PowerShell capture/enumeration scripts and Linux `evdev` translator |
+| `tools/` | Linux and Android capture/enumeration scripts |
 | `android-sdk/` | Multi-module Kotlin/Android SDK and sample app |
 | `docs/superpowers/specs/` | SDK design notes |
 | `docs/superpowers/plans/` | Implementation plan used to build the SDK |
@@ -119,11 +119,23 @@ Decode D06 input in an `Activity`:
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
     }
 
@@ -146,6 +158,30 @@ val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
 `D06Input` only consumes events from recognized D06 device metadata, or from events where Android does not expose device metadata. If your device appears under a different name/VID/PID, add it to `D06InputConfig`.
 
 For advanced integrations that need the decoded list instead of a callback, use `D06InputDecoder` directly.
+
+Use `d06-remapper` for profile-based remapping:
+
+```kotlin
+import com.d06.sdk.core.D06Event
+import com.d06.sdk.remapper.D06RemapAction
+import com.d06.sdk.remapper.D06RemapPreset
+import com.d06.sdk.remapper.D06Remapper
+
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+val remapper = D06Remapper(preset)
+val action = remapper.actionFor(D06Event.MousepadTap)
+```
+
+Built-in presets are available as `D06RemapPresets.Accessibility`, `Presentation`, `Media`, and `MouseOnly`. `D06RemapValidator.validateForAccessibilityService(preset)` reports actions that an AccessibilityService cannot execute directly.
+
+Diagnostics can be exported as JSON Lines:
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
 
 The matcher recognizes both known paths:
 
@@ -213,17 +249,39 @@ Or pass a node explicitly:
 python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
 ```
 
+Apply a Linux transform/remap profile:
+
+```bash
+python3 tools/linux/d06_evdev.py --profile tools/linux/d06-profile.example.json --seconds 30
+```
+
 Reading `/dev/input/event*` usually requires root, an `input` group membership, or a udev rule. The first Linux milestone only decodes and prints events; it does not grab the device, suppress normal mouse behavior, or emit replacement input.
+
+Templates:
+
+- `tools/linux/99-d06-pro.rules`
+- `tools/linux/d06-evdev.service`
 
 ## Reverse Engineering Tools
 
-Run these from Windows PowerShell while the D06 Pro is paired:
+Linux tools:
 
-```powershell
-.\tools\dump_d06_gatt.ps1
-.\tools\dump_hid_caps.ps1
-.\tools\list_raw_input_devices.ps1
-.\tools\capture_raw_input.ps1 -Seconds 10
+```bash
+python3 tools/linux/d06_evdev.py --list
+python3 tools/linux/d06_evdev.py --seconds 10
+python3 tools/linux/d06_hid.py --list
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
+sudo python3 tools/linux/d06_hid.py --capture --seconds 10
+python3 -m pip install bleak
+python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+```
+
+Android tools, from a Linux host with USB or wireless debugging:
+
+```bash
+tools/android/d06_android_input.sh list
+tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
 ```
 
 The captures are useful for:
@@ -246,9 +304,8 @@ The captures are useful for:
 
 Completed:
 
-- Windows BLE/GATT enumeration
-- Windows HID collection/caps parsing
-- Windows Raw Input captures for known controls
+- Historical BLE/GATT enumeration and HID collection/caps parsing
+- Historical input captures for known controls
 - Android SDK build and unit tests
 - Android sample app debug build
 
@@ -256,6 +313,7 @@ Pending:
 
 - Live Android device validation with the sample app
 - Android metadata capture for how the D06 appears on specific phones/tablets
+- Live Linux `evdev`/`hidraw` validation on a host with Bluetooth or the USB receiver
 - Any controls not physically visible or not activated during the capture session
 
 ## Safety Notes

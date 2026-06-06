@@ -1,0 +1,4 @@
+# Install to /etc/udev/rules.d/99-d06-pro.rules, then reconnect the D06 receiver.
+# TAG+="uaccess" lets the active local user read matching /dev/input/event* nodes.
+KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_VENDOR_ID}=="248a", ENV{ID_MODEL_ID}=="0101", TAG+="uaccess"
+KERNEL=="event*", SUBSYSTEM=="input", ENV{ID_VENDOR_ID}=="248a", ENV{ID_MODEL_ID}=="0401", TAG+="uaccess"

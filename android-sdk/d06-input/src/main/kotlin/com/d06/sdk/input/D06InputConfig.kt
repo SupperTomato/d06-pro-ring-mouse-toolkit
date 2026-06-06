@@ -2,9 +2,12 @@ package com.d06.sdk.input
 
 import android.os.Build
 import android.view.InputDevice
+import com.d06.sdk.core.D06EventTransformConfig
 
-data class D06InputConfig(
+data class D06InputConfig @JvmOverloads constructor(
     val detectMousepadTap: Boolean = false,
+    val tapWindowMillis: Long = 250,
+    val eventTransform: D06EventTransformConfig = D06EventTransformConfig(),
     val acceptedNames: Set<String> = setOf("D06 Pro", "D06", "TK Wireless Receiver"),
     val vendorId: Int = D06_VENDOR_ID,
     val productId: Int = D06_BLUETOOTH_PRODUCT_ID,

@@ -1,0 +1,23 @@
+{
+  "transform": {
+    "invert_x": false,
+    "invert_y": false,
+    "movement_sensitivity": 1.0,
+    "scroll_sensitivity": 1.0,
+    "movement_deadzone": 0
+  },
+  "remap": {
+    "MousepadTap": {
+      "event": "Custom",
+      "name": "select"
+    },
+    "Scroll.Up": {
+      "event": "Custom",
+      "name": "volume_up"
+    },
+    "Scroll.Down": {
+      "event": "Custom",
+      "name": "volume_down"
+    }
+  }
+}

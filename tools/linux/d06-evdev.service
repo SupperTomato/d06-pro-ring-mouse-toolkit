@@ -1,0 +1,13 @@
+[Unit]
+Description=D06 Pro evdev decoder
+Documentation=https://github.com/SupperTomato/D06-Pro-Ring-Mouse
+
+[Service]
+Type=simple
+WorkingDirectory=%h/D06-Pro-Ring-Mouse
+ExecStart=/usr/bin/python3 %h/D06-Pro-Ring-Mouse/tools/linux/d06_evdev.py --profile %h/.config/d06/profile.json
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

@@ -22,6 +22,8 @@ class D06AccessibilityRemapperService : AccessibilityService() {
             D06RemapAction.Home -> performGlobalAction(GLOBAL_ACTION_HOME)
             D06RemapAction.RecentApps -> performGlobalAction(GLOBAL_ACTION_RECENTS)
             is D06RemapAction.ScrollBy -> dispatchScrollGesture(action.dy)
+            is D06RemapAction.SendKey -> false
+            is D06RemapAction.Custom -> false
         }
     }
 

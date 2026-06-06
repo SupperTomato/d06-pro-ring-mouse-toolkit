@@ -19,9 +19,11 @@ from tools.linux.d06_evdev import (
     REL_X,
     REL_Y,
     SYN_REPORT,
+    D06EvdevProfile,
     D06EvdevTranslator,
     EvdevEvent,
     event_to_json,
+    load_profile,
     parse_input_devices,
 )
 
@@ -218,6 +220,78 @@ H: Handlers=event20 mouse2
             ],
         )
         self.assertEqual([device.is_likely_d06 for device in devices], [True, True, False])
+
+    def test_profile_transforms_motion_and_scroll(self) -> None:
+        profile = D06EvdevProfile.from_dict(
+            {
+                "transform": {
+                    "invert_x": True,
+                    "movement_sensitivity": 2,
+                    "movement_deadzone": 3,
+                    "scroll_sensitivity": 2,
+                }
+            }
+        )
+        translator = D06EvdevTranslator(profile=profile)
+
+        decoded = collect(
+            translator,
+            [
+                event(EV_REL, REL_X, 2),
+                event(EV_REL, REL_Y, 4),
+                event(EV_REL, REL_WHEEL, -1),
+                event(EV_SYN, SYN_REPORT, 0),
+            ],
+        )
+
+        self.assertEqual(
+            decoded,
+            [
+                {"event": "MousepadMove", "dx": 0, "dy": 8, "source": "/dev/input/event12", "timestamp": 1770000000.25},
+                {"event": "Scroll", "direction": "Down", "units": 2, "source": "/dev/input/event12", "timestamp": 1770000000.25},
+            ],
+        )
+
+    def test_profile_remaps_named_events(self) -> None:
+        profile = D06EvdevProfile.from_dict(
+            {
+                "remap": {
+                    "LeftUp": {"event": "Custom", "name": "select"},
+                    "Scroll.Down": {"event": "Custom", "name": "volume_down"},
+                }
+            }
+        )
+        translator = D06EvdevTranslator(profile=profile)
+
+        decoded = collect(
+            translator,
+            [
+                event(EV_KEY, BTN_LEFT, 0),
+                event(EV_REL, REL_WHEEL, -1),
+                event(EV_SYN, SYN_REPORT, 0),
+            ],
+        )
+
+        self.assertEqual(
+            decoded,
+            [
+                {"event": "Custom", "name": "select", "source": "/dev/input/event12", "timestamp": 1770000000.25},
+                {"event": "Custom", "name": "volume_down", "source": "/dev/input/event12", "timestamp": 1770000000.25},
+            ],
+        )
+
+    def test_load_profile_from_json_file(self) -> None:
+        import tempfile
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            path = Path(tmpdir) / "profile.json"
+            path.write_text('{"transform":{"invert_y":true},"remap":{"RightUp":{"event":"Custom","name":"back"}}}')
+
+            profile = load_profile(path)
+
+        self.assertEqual({"event": "MousepadMove", "dx": 1, "dy": -2}, profile.apply({"event": "MousepadMove", "dx": 1, "dy": 2}))
+        self.assertEqual({"event": "Custom", "name": "back"}, profile.apply({"event": "RightUp"}))
 
 
 if __name__ == "__main__":

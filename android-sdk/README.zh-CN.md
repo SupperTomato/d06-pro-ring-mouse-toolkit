@@ -55,6 +55,16 @@ Android 12 及以上需要：
 ./gradlew test assembleDebug
 ```
 
+## 本地发布或使用 JitPack
+
+库模块已配置 Gradle `maven-publish`：
+
+```bash
+./gradlew publishToMavenLocal
+```
+
+JitPack 使用方式：创建 GitHub release 或 tag，然后通过 `https://jitpack.io` 使用对应 tag 或 commit hash。
+
 ## 将 SDK 添加到应用
 
 这些模块当前以源码形式使用。把模块添加到应用的 `settings.gradle.kts`：
@@ -86,11 +96,23 @@ dependencies {
 import android.app.Activity
 import android.view.KeyEvent
 import android.view.MotionEvent
+import com.d06.sdk.core.D06EventTransformConfig
 import com.d06.sdk.input.D06Input
 import com.d06.sdk.input.D06InputConfig
+import com.d06.sdk.input.D06InputDiagnostics
 
 class MainActivity : Activity() {
-    private val d06 = D06Input(D06InputConfig(detectMousepadTap = true)) { event ->
+    private val diagnostics = D06InputDiagnostics()
+    private val d06 = D06Input(
+        D06InputConfig(
+            detectMousepadTap = true,
+            eventTransform = D06EventTransformConfig(
+                movementSensitivity = 1.25f,
+                movementDeadzone = 2
+            )
+        ),
+        diagnostics
+    ) { event ->
         // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等。
     }
 
@@ -109,6 +131,29 @@ class MainActivity : Activity() {
 `D06Input` 只会消费已识别的 D06 设备元数据，或 Android 没有暴露设备元数据的事件。如果你的设备显示为不同名称/VID/PID，把它加到 `D06InputConfig`。
 
 如果高级集成需要拿到解码后的事件列表而不是回调，可以直接使用 `D06InputDecoder`。
+
+## Remap Preset
+
+```kotlin
+val preset = D06RemapPreset("my-profile") {
+    on(D06Event.MousepadTap, D06RemapAction.Home)
+    on(D06Event.MiddleUp, D06RemapAction.Back)
+}
+
+val action = D06Remapper(preset).actionFor(D06Event.MousepadTap)
+```
+
+内置 preset：`D06RemapPresets.Accessibility`、`Presentation`、`Media`、`MouseOnly`。
+
+在把动作交给 `D06AccessibilityRemapperService` 前，可用 `D06RemapValidator.validateForAccessibilityService(preset)` 检查 AccessibilityService 不能直接执行的动作。
+
+## 诊断日志
+
+```kotlin
+val jsonl = diagnostics.toJsonLines()
+```
+
+诊断模块会保留有限数量的已解码事件和输入设备元数据。
 
 匹配器会识别两条已知 D06 路径：
 

@@ -1,5 +1,10 @@
 plugins {
     kotlin("jvm")
+    `maven-publish`
+}
+
+java {
+    withSourcesJar()
 }
 
 kotlin {
@@ -13,4 +18,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifactId = "d06-core"
+            from(components["java"])
+        }
+    }
 }
