@@ -6,6 +6,8 @@ D06 Pro 戒指鼠标的 Kotlin Android SDK。
 
 该 SDK 用于在 Android 应用收到 D06 Pro 输入流时解码事件。它也提供 BLE/GATT 元数据辅助工具，以及受限的 AccessibilityService 重映射辅助模块。它不会替代 Android 系统 HID 驱动。
 
+每个公开 SDK 部分、事件和工具命令的非开发者说明，见 [../FUNCTIONS.md](../FUNCTIONS.md)。
+
 ## 模块
 
 - `d06-core`：纯 Kotlin 事件模型和已验证的 D06 映射逻辑。

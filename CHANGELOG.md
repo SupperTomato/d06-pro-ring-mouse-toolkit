@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `FUNCTIONS.md` with non-developer explanations of SDK APIs, events, and command tools.
 - Rename the GitHub repository to `d06-pro-ring-mouse-toolkit`.
 - Rewrite the root English and Chinese READMEs for non-developer users.
 - Organize capture artifacts by platform and capture surface.

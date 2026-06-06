@@ -6,6 +6,8 @@
 
 简单说：D06 Pro 在系统里像一个小型蓝牙或 USB 鼠标。本仓库记录每个按键和手势发出的信号，提供 Android SDK/示例应用，也提供 Linux 工具来查看戒指鼠标正在发送什么输入。
 
+每个 SDK 部分、命令和事件能做什么，见英文的通俗说明：[FUNCTIONS.md](FUNCTIONS.md)。
+
 ## 适合谁
 
 - 想知道 D06 Pro 每个按键真实作用的用户。
@@ -176,6 +178,7 @@ tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/in
 | `android-sdk/` | Android SDK 模块和示例应用 |
 | `tools/` | Linux 和 Android 采集工具 |
 | `artifacts/` | 按 Android、Linux、历史主机采集分组的数据 |
+| `FUNCTIONS.md` | 工具包功能和特性的通俗说明 |
 | `D06_PRO_RE.md` | 详细逆向工程记录 |
 | `docs/research/` | SDK 功能研究 |
 | `docs/superpowers/` | 实现规格和计划 |
