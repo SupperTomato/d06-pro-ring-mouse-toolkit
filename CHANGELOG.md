@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Rename the GitHub repository to `d06-pro-ring-mouse-toolkit`.
+- Rewrite the root English and Chinese READMEs for non-developer users.
 - Organize capture artifacts by platform and capture surface.
 - Add `artifacts/README.md` and `tools/README.md` indexes.
 - Replace Windows-only capture scripts with Linux `evdev`/`hidraw`/BlueZ helpers and Android `adb getevent` tooling.

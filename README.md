@@ -1,142 +1,138 @@
-# D06 Pro Ring Mouse
+# D06 Pro Ring Mouse Toolkit
 
 Language: English | [简体中文](README.zh-CN.md)
 
-Reverse-engineering notes, capture tools, and a Kotlin Android SDK for the D06 Pro Bluetooth ring mouse.
+This project helps people understand and use the D06 Pro ring mouse on Android and Linux.
 
-The D06 Pro presents itself as a Bluetooth HID device with mouse, keyboard, and consumer-control collections. This repository documents the observed HID/BLE behavior and packages the confirmed mappings into Android SDK modules that can decode D06 events inside an Android app.
+Plain English: the D06 Pro behaves like a small Bluetooth or USB mouse. This repo records what each button and gesture sends, provides an Android SDK/sample app, and includes Linux tools for checking what the ring mouse is doing.
 
-## What This Project Does
+## Who This Is For
 
-- Documents the D06 Pro Bluetooth identity, GATT services, HID collections, and observed runtime behavior.
-- Maps verified controls: left click, right click, middle click, scroll up/down, mousepad motion, mousepad tap, double tap, and long press behavior observed so far.
-- Provides Linux and Android capture tools for BLE/GATT, HID descriptors, `evdev`, `hidraw`, and `adb getevent`.
-- Provides an Android SDK with a pure Kotlin mapper, Android `MotionEvent` / `KeyEvent` adapter, BLE metadata client, constrained remapper helper, and sample app.
-- Provides a Linux `evdev` translator that maps `/dev/input/event*` mouse events into the same canonical D06 event names.
-- Keeps capture artifacts so future mappings can be checked against the original data.
+- D06 Pro owners who want to know what the buttons actually do.
+- Android users testing the ring mouse with a phone or tablet.
+- Android app developers who want to decode D06 input inside an app.
+- Linux users who want to inspect or translate D06 input events.
+- Reverse-engineering users who want the captured HID/BLE evidence.
 
-This project does not flash firmware, modify the mouse, or write to the vendor/Telink service. Vendor writes are intentionally avoided until that protocol is known.
+## Current Status
 
-## Repository Layout
+Working:
 
-| Path | Purpose |
-| --- | --- |
-| `D06_PRO_RE.md` | Detailed reverse-engineering report and feature audit |
-| `artifacts/` | Capture data grouped by platform |
-| `tools/` | Linux and Android capture/enumeration scripts |
-| `android-sdk/` | Multi-module Kotlin/Android SDK and sample app |
-| `docs/superpowers/specs/` | SDK design notes |
-| `docs/superpowers/plans/` | Implementation plan used to build the SDK |
+- left, right, and middle click decoding
+- scroll up/down decoding
+- mousepad movement direction mapping
+- mousepad tap/double-tap observation
+- Android input decoder SDK
+- Android sample app
+- Linux `evdev` decoder
+- Linux `hidraw` and BLE/GATT inspection tools
+- USB receiver detection on Linux
 
-## Verified D06 Mapping
+Still limited:
 
-| D06 action | Observed host event | Android SDK event |
-| --- | --- | --- |
-| Left click | Mouse left down/up: `0x0001`, `0x0002` | `LeftDown`, `LeftUp` |
-| Right click | Mouse right down/up: `0x0004`, `0x0008` | `RightDown`, `RightUp` |
-| Middle click | Mouse middle down/up: `0x0010`, `0x0020` | `MiddleDown`, `MiddleUp` |
-| Scroll up | Wheel flag `0x0400`, data `+120` | `Scroll(Up, units)` |
-| Scroll down | Wheel flag `0x0400`, data `-120` | `Scroll(Down, units)` |
-| Mousepad right | Relative `+X` | `MousepadMove(+dx, 0)` |
-| Mousepad left | Relative `-X` | `MousepadMove(-dx, 0)` |
-| Mousepad up | Relative `-Y` | `MousepadMove(0, -dy)` |
-| Mousepad down | Relative `+Y` | `MousepadMove(0, +dy)` |
-| Mousepad tap | Same HID pattern as left click | `MousepadTap` when tap detection is enabled |
-| Mousepad double tap | Repeated left click pairs | Repeated tap/click events |
-| Left/right long press | Normal held mouse button in captured Windows mode | Normal down/up events |
+- stock Android apps cannot globally replace every hardware mouse event
+- mousepad tap and physical left click can look identical at HID level
+- hidden button 4/5, keyboard mode, and media mode still need more real-device captures
+- vendor/Telink writes are intentionally not supported
 
-Mousepad tap and physical left click can be indistinguishable at HID level because both may arrive as the same left-button down/up pair. The SDK tap mode is a timing/no-movement heuristic, not a separate hardware signal.
+## Simple Android Use
 
-## Android SDK
+For normal testing:
 
-The SDK lives in `android-sdk/` and has five modules:
-
-| Module | What it does |
-| --- | --- |
-| `d06-core` | Pure Kotlin event model and D06 raw mouse mapper |
-| `d06-input` | Android `MotionEvent` / `KeyEvent` decoder and D06 device matcher |
-| `d06-ble` | BLE/GATT UUID profile and battery/service discovery client |
-| `d06-remapper` | AccessibilityService-based remapper helper for Android-supported actions |
-| `d06-sample` | Live event console app for hardware validation |
-
-Minimum SDK:
-
-- `d06-core`, `d06-input`, `d06-ble`: minSdk 23
-- `d06-remapper`, `d06-sample`: minSdk 24 because Android gesture dispatch is API 24+
-
-### Build The SDK
-
-```bash
-cd android-sdk
-./gradlew test assembleDebug
-```
-
-The sample debug APK is produced at:
-
-```text
-android-sdk/d06-sample/build/outputs/apk/debug/d06-sample-debug.apk
-```
-
-### Install The Sample App
-
-Connect an Android device with USB debugging enabled:
+1. Pair the D06 Pro with your Android device over Bluetooth, or connect the 2.4 GHz receiver through USB-OTG.
+2. Build and install the sample app:
 
 ```bash
 cd android-sdk
 ./gradlew :d06-sample:installDebug
 ```
 
-Then pair the D06 Pro over Bluetooth, open **D06 SDK Sample**, and interact with the screen. The sample logs decoded D06 events.
+3. Open **D06 SDK Sample**.
+4. Press buttons and move the mousepad. The app shows decoded D06 events.
 
-### Use The SDK In An Android App
+At the moment, there is no packaged app release in this repo. You still need Gradle/Android Studio, or someone to build the sample APK for you.
 
-For local development, add the modules to your app's `settings.gradle.kts`:
+## Simple Linux Use
+
+List possible D06 input devices:
+
+```bash
+python3 tools/linux/d06_evdev.py --list
+```
+
+Print decoded events:
+
+```bash
+python3 tools/linux/d06_evdev.py --seconds 30
+```
+
+If Linux blocks access to `/dev/input/event*`, run with `sudo`, join the `input` group, or install the udev rule template in `tools/linux/99-d06-pro.rules`.
+
+The Linux tool prints events. It does not take over the mouse or stop normal pointer movement.
+
+## Button And Gesture Map
+
+| D06 action | What the host sees | SDK event |
+| --- | --- | --- |
+| Left click | Mouse left down/up | `LeftDown`, `LeftUp` |
+| Right click | Mouse right down/up | `RightDown`, `RightUp` |
+| Middle click | Mouse middle down/up | `MiddleDown`, `MiddleUp` |
+| Scroll up | Mouse wheel positive step | `Scroll(Up, units)` |
+| Scroll down | Mouse wheel negative step | `Scroll(Down, units)` |
+| Mousepad right | Relative `+X` movement | `MousepadMove(+dx, 0)` |
+| Mousepad left | Relative `-X` movement | `MousepadMove(-dx, 0)` |
+| Mousepad up | Relative `-Y` movement | `MousepadMove(0, -dy)` |
+| Mousepad down | Relative `+Y` movement | `MousepadMove(0, +dy)` |
+| Mousepad tap | Same pattern as left click | `MousepadTap` only when tap detection is enabled |
+| Mousepad double tap | repeated left click pairs | repeated tap/click events |
+
+The manuals may describe app actions such as "next video", "like", or "camera". At the device level, those are usually normal mouse, keyboard, or media-control events. The app decides what they mean.
+
+## Android SDK For Developers
+
+The SDK lives in `android-sdk/`.
+
+| Module | Purpose |
+| --- | --- |
+| `d06-core` | pure Kotlin D06 event model and mapper |
+| `d06-input` | Android `MotionEvent` / `KeyEvent` decoder |
+| `d06-ble` | BLE/GATT metadata and battery helper |
+| `d06-remapper` | limited AccessibilityService remapping helper |
+| `d06-sample` | sample app for real-device testing |
+
+Build everything:
+
+```bash
+cd android-sdk
+./gradlew test assembleDebug
+```
+
+Publish to Maven local:
+
+```bash
+cd android-sdk
+./gradlew publishToMavenLocal
+```
+
+For local source development, include the modules from a nearby clone:
 
 ```kotlin
 include(":d06-core")
-project(":d06-core").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-core")
+project(":d06-core").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-core")
 
 include(":d06-input")
-project(":d06-input").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-input")
+project(":d06-input").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-input")
 
 include(":d06-ble")
-project(":d06-ble").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-ble")
+project(":d06-ble").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-ble")
 ```
 
-Then add dependencies in your app module:
+Basic decoder usage:
 
 ```kotlin
-dependencies {
-    implementation(project(":d06-core"))
-    implementation(project(":d06-input"))
-    implementation(project(":d06-ble"))
-}
-```
-
-For Maven local or JitPack usage, see `android-sdk/README.md`.
-
-Decode D06 input in an `Activity`:
-
-```kotlin
-import android.app.Activity
-import android.view.KeyEvent
-import android.view.MotionEvent
-import com.d06.sdk.core.D06EventTransformConfig
-import com.d06.sdk.input.D06Input
-import com.d06.sdk.input.D06InputConfig
-import com.d06.sdk.input.D06InputDiagnostics
-
 class MainActivity : Activity() {
-    private val diagnostics = D06InputDiagnostics()
     private val d06 = D06Input(
-        D06InputConfig(
-            detectMousepadTap = true,
-            eventTransform = D06EventTransformConfig(
-                movementSensitivity = 1.25f,
-                movementDeadzone = 2
-            )
-        ),
-        diagnostics
+        D06InputConfig(detectMousepadTap = true)
     ) { event ->
         // Handle LeftDown, Scroll, MousepadMove, MousepadTap, etc.
     }
@@ -151,134 +147,21 @@ class MainActivity : Activity() {
 }
 ```
 
-Use the matcher when you need to check the Android input device:
+See [android-sdk/README.md](android-sdk/README.md) for full SDK usage, remap presets, diagnostics, and BLE permissions.
 
-```kotlin
-val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
-```
+## Linux And Android Capture Tools
 
-`D06Input` only consumes events from recognized D06 device metadata, or from events where Android does not expose device metadata. If your device appears under a different name/VID/PID, add it to `D06InputConfig`.
-
-For advanced integrations that need the decoded list instead of a callback, use `D06InputDecoder` directly.
-
-Use `d06-remapper` for profile-based remapping:
-
-```kotlin
-import com.d06.sdk.core.D06Event
-import com.d06.sdk.remapper.D06RemapAction
-import com.d06.sdk.remapper.D06RemapPreset
-import com.d06.sdk.remapper.D06Remapper
-
-val preset = D06RemapPreset("my-profile") {
-    on(D06Event.MousepadTap, D06RemapAction.Home)
-    on(D06Event.MiddleUp, D06RemapAction.Back)
-}
-val remapper = D06Remapper(preset)
-val action = remapper.actionFor(D06Event.MousepadTap)
-```
-
-Built-in presets are available as `D06RemapPresets.Accessibility`, `Presentation`, `Media`, and `MouseOnly`. `D06RemapValidator.validateForAccessibilityService(preset)` reports actions that an AccessibilityService cannot execute directly.
-
-Diagnostics can be exported as JSON Lines:
-
-```kotlin
-val jsonl = diagnostics.toJsonLines()
-```
-
-The matcher recognizes both known paths:
-
-- Bluetooth HID: VID/PID `248a:0101`, names containing `D06` or `D06 Pro`
-- 2.4 GHz USB receiver through USB-OTG: VID/PID `248a:0401`, names containing `TK Wireless Receiver`
-
-The USB receiver path still arrives as normal Android `MotionEvent` / `KeyEvent` input. It does not require Bluetooth permissions, but it does require the Android device to support USB host/OTG and accept the receiver as a HID mouse/keyboard.
-
-### BLE Usage
-
-Android 12 and newer require `BLUETOOTH_CONNECT`:
-
-```xml
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-```
-
-After your app has runtime permission and a `BluetoothDevice`:
-
-```kotlin
-import com.d06.sdk.ble.D06BleClient
-
-val client = D06BleClient(context)
-client.connect(bluetoothDevice)
-
-// Observe client.state for:
-// Idle, Connecting, Connected, ServicesDiscovered, BatteryLevel, Error
-```
-
-The BLE client is for metadata and battery/service discovery. It does not replace Android's HID stack and does not write vendor configuration commands.
-
-### Remapper Limits
-
-`d06-remapper` can help trigger Android-supported accessibility actions, such as back/home or dispatchable gestures, when your app has an allowed path to decoded `D06Event` values.
-
-Stock Android does not expose a normal app API for globally intercepting and replacing every hardware HID mouse event system-wide. For full global HID interception, you would need platform privileges, a custom input service, root-level integration, or a different OS/device policy surface.
-
-## Linux Evdev Translator
-
-Linux support translates the already verified Windows Raw Input mapping into Linux `evdev` events. It does not redo the reverse engineering; it uses Linux's standard HID-to-evdev mapping:
-
-| D06 action | Linux event | JSON event |
-| --- | --- | --- |
-| Left click | `EV_KEY BTN_LEFT 1/0` | `LeftDown`, `LeftUp` |
-| Right click | `EV_KEY BTN_RIGHT 1/0` | `RightDown`, `RightUp` |
-| Middle click | `EV_KEY BTN_MIDDLE 1/0` | `MiddleDown`, `MiddleUp` |
-| Scroll up/down | `EV_REL REL_WHEEL +/-N` or `REL_WHEEL_HI_RES +/-120*N` | `Scroll(Up/Down, units)` |
-| Mousepad motion | `EV_REL REL_X/REL_Y` | `MousepadMove(dx, dy)` |
-| Button 4/5 if exposed | `EV_KEY BTN_SIDE/BTN_EXTRA` | `UnknownButton(4/5, pressed)` |
-
-List Linux input nodes and D06 match reasons:
-
-```bash
-python3 tools/linux/d06_evdev.py --list
-```
-
-Stream decoded JSON Lines from a matched D06 node:
-
-```bash
-python3 tools/linux/d06_evdev.py --seconds 30
-```
-
-Or pass a node explicitly:
-
-```bash
-python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
-```
-
-Apply a Linux transform/remap profile:
-
-```bash
-python3 tools/linux/d06_evdev.py --profile tools/linux/d06-profile.example.json --seconds 30
-```
-
-Reading `/dev/input/event*` usually requires root, an `input` group membership, or a udev rule. The first Linux milestone only decodes and prints events; it does not grab the device, suppress normal mouse behavior, or emit replacement input.
-
-Templates:
-
-- `tools/linux/99-d06-pro.rules`
-- `tools/linux/d06-evdev.service`
-
-## Reverse Engineering Tools
-
-Linux tools:
+Linux:
 
 ```bash
 python3 tools/linux/d06_evdev.py --list
 python3 tools/linux/d06_evdev.py --seconds 10
 python3 tools/linux/d06_hid.py --list
 sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux/hid/hid_caps.json
-sudo python3 tools/linux/d06_hid.py --capture --seconds 10
-python3 -m pip install bleak
 python3 tools/linux/dump_d06_gatt.py --address AA:BB:CC:DD:EE:FF --out-dir artifacts/linux/gatt
 ```
 
-Android tools, from a Linux host with USB or wireless debugging:
+Android from a Linux host with USB or wireless debugging:
 
 ```bash
 tools/android/d06_android_input.sh list
@@ -286,40 +169,20 @@ tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android/
 tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/input.txt
 ```
 
-The captures are useful for:
+## Repository Map
 
-- finding whether a control emits mouse, keyboard, or consumer-control reports;
-- checking button flags and wheel data;
-- confirming mousepad axis signs;
-- discovering whether hidden buttons 4/5 exist on a specific unit or mode.
+| Path | What it contains |
+| --- | --- |
+| `android-sdk/` | Android SDK modules and sample app |
+| `tools/` | Linux and Android capture tools |
+| `artifacts/` | grouped capture data from Android, Linux, and historical host captures |
+| `D06_PRO_RE.md` | detailed reverse-engineering notes |
+| `docs/research/` | SDK feature research |
+| `docs/superpowers/` | implementation specs and plans |
 
-## Features Still Worth Testing
+## Safety And Privacy
 
-- Mouse button 4/5 behavior if the physical unit exposes side/back/forward controls.
-- Keyboard-mode outputs from HID collection `Col01`.
-- Consumer/media-control outputs from HID collection `Col02`.
-- Mode-toggle behavior before and after repeating known controls.
-- Battery notifications and raw HID report map on a host that allows HID-over-GATT access.
-- Vendor/Telink service notifications. Avoid writes until the protocol is known.
-
-## Current Validation State
-
-Completed:
-
-- Historical BLE/GATT enumeration and HID collection/caps parsing
-- Historical input captures for known controls
-- Android SDK build and unit tests
-- Android sample app debug build
-
-Pending:
-
-- Live Android device validation with the sample app
-- Android metadata capture for how the D06 appears on specific phones/tablets
-- Live Linux `evdev`/`hidraw` validation on a host with Bluetooth or the USB receiver
-- Any controls not physically visible or not activated during the capture session
-
-## Safety Notes
-
-- The D06 vendor service resembles a Telink OTA/config service. Do not write to it unless you have a known-good protocol and recovery plan.
-- The capture artifacts may include your specific Bluetooth address and device IDs. Keep that in mind if publishing forks or issue reports.
-- The Android remapper module is intentionally conservative so it does not imply system-wide input interception that stock Android cannot provide.
+- This project does not flash firmware.
+- This project does not write to the vendor/Telink service.
+- Capture files may contain device names, hardware IDs, or Bluetooth addresses.
+- Android remapping is intentionally conservative because stock Android does not allow normal apps to replace all hardware mouse input system-wide.

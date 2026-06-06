@@ -71,13 +71,13 @@ JitPack 使用方式：创建 GitHub release 或 tag，然后通过 `https://jit
 
 ```kotlin
 include(":d06-core")
-project(":d06-core").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-core")
+project(":d06-core").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-core")
 
 include(":d06-input")
-project(":d06-input").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-input")
+project(":d06-input").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-input")
 
 include(":d06-ble")
-project(":d06-ble").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-ble")
+project(":d06-ble").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-ble")
 ```
 
 然后按需依赖模块：

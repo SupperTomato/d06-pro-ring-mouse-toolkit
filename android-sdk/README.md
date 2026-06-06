@@ -71,13 +71,13 @@ For local source development, add the modules to your app's `settings.gradle.kts
 
 ```kotlin
 include(":d06-core")
-project(":d06-core").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-core")
+project(":d06-core").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-core")
 
 include(":d06-input")
-project(":d06-input").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-input")
+project(":d06-input").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-input")
 
 include(":d06-ble")
-project(":d06-ble").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-ble")
+project(":d06-ble").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-ble")
 ```
 
 Then depend on the modules you need:

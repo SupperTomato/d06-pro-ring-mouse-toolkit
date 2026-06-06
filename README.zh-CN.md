@@ -1,142 +1,138 @@
-# D06 Pro 戒指鼠标
+# D06 Pro 戒指鼠标工具包
 
 语言：[English](README.md) | 简体中文
 
-D06 Pro 蓝牙戒指鼠标的逆向工程记录、采集工具和 Kotlin Android SDK。
+这个项目帮助用户在 Android 和 Linux 上理解、测试、使用 D06 Pro 戒指鼠标。
 
-D06 Pro 在主机上表现为一个 Bluetooth HID 设备，包含鼠标、键盘和消费者控制这几类 HID 集合。本仓库记录已观察到的 HID/BLE 行为，并把已经确认的映射封装成 Android SDK 模块，方便 Android 应用在收到 D06 输入事件时进行解码。
+简单说：D06 Pro 在系统里像一个小型蓝牙或 USB 鼠标。本仓库记录每个按键和手势发出的信号，提供 Android SDK/示例应用，也提供 Linux 工具来查看戒指鼠标正在发送什么输入。
 
-## 这个项目做什么
+## 适合谁
 
-- 记录 D06 Pro 的蓝牙身份信息、GATT 服务、HID 集合和实际运行行为。
-- 映射已经确认的控制：左键、右键、中键、上/下滚动、鼠标板移动、鼠标板点击、双击，以及目前观察到的长按行为。
-- 提供 Linux 和 Android 采集工具，用于 BLE/GATT、HID descriptor、`evdev`、`hidraw` 和 `adb getevent`。
-- 提供 Android SDK，包括纯 Kotlin 映射器、Android `MotionEvent` / `KeyEvent` 适配器、BLE 元数据客户端、受限的重映射辅助模块和示例应用。
-- 提供 Linux `evdev` 转换器，把 `/dev/input/event*` 鼠标事件映射为同一套 D06 标准事件名。
-- 保留采集数据，方便后续对照原始数据继续确认新的映射。
+- 想知道 D06 Pro 每个按键真实作用的用户。
+- 想在手机或平板上测试 D06 Pro 的 Android 用户。
+- 想在 Android 应用里识别 D06 输入的开发者。
+- 想在 Linux 上查看或转换 D06 输入事件的用户。
+- 想查看 HID/BLE 采集证据的逆向工程用户。
 
-本项目不会刷写固件、修改鼠标，也不会向 vendor/Telink 服务写入数据。在协议明确之前，项目会刻意避免 vendor 写操作。
+## 当前状态
 
-## 仓库结构
+已经可用：
 
-| 路径 | 用途 |
-| --- | --- |
-| `D06_PRO_RE.md` | 详细逆向工程报告和功能审计 |
-| `artifacts/` | 按平台分组的采集数据 |
-| `tools/` | Linux 和 Android 采集/枚举脚本 |
-| `android-sdk/` | 多模块 Kotlin/Android SDK 和示例应用 |
-| `docs/superpowers/specs/` | SDK 设计说明 |
-| `docs/superpowers/plans/` | 构建 SDK 时使用的实现计划 |
+- 左键、右键、中键解码
+- 上/下滚动解码
+- 鼠标板移动方向映射
+- 鼠标板点击/双击观察
+- Android 输入解码 SDK
+- Android 示例应用
+- Linux `evdev` 解码器
+- Linux `hidraw` 和 BLE/GATT 检查工具
+- Linux 上识别 USB 接收器
 
-## 已验证的 D06 映射
+仍有限制：
 
-| D06 动作 | 主机上观察到的事件 | Android SDK 事件 |
-| --- | --- | --- |
-| 左键 | 鼠标左键按下/抬起：`0x0001`、`0x0002` | `LeftDown`、`LeftUp` |
-| 右键 | 鼠标右键按下/抬起：`0x0004`、`0x0008` | `RightDown`、`RightUp` |
-| 中键 | 鼠标中键按下/抬起：`0x0010`、`0x0020` | `MiddleDown`、`MiddleUp` |
-| 向上滚动 | 滚轮 flag `0x0400`，data `+120` | `Scroll(Up, units)` |
-| 向下滚动 | 滚轮 flag `0x0400`，data `-120` | `Scroll(Down, units)` |
-| 鼠标板向右 | 相对位移 `+X` | `MousepadMove(+dx, 0)` |
-| 鼠标板向左 | 相对位移 `-X` | `MousepadMove(-dx, 0)` |
-| 鼠标板向上 | 相对位移 `-Y` | `MousepadMove(0, -dy)` |
-| 鼠标板向下 | 相对位移 `+Y` | `MousepadMove(0, +dy)` |
-| 鼠标板点击 | 与左键相同的 HID 模式 | 启用点击检测时为 `MousepadTap` |
-| 鼠标板双击 | 连续的左键点击对 | 连续 tap/click 事件 |
-| 左/右长按 | 在已采集的 Windows 模式中表现为普通按住鼠标按钮 | 普通 down/up 事件 |
+- 普通 Android 应用不能全局替换所有硬件鼠标事件
+- 鼠标板点击和物理左键在 HID 层可能完全一样
+- 隐藏按钮 4/5、键盘模式、媒体模式还需要更多真机采集
+- 项目刻意不支持 vendor/Telink 写入
 
-鼠标板点击和物理左键在 HID 层可能无法区分，因为它们都可能表现为同一个左键按下/抬起组合。SDK 的点击模式是基于时间窗口和无移动的启发式检测，并不是独立硬件信号。
+## Android 简单使用
 
-## Android SDK
+普通测试流程：
 
-SDK 位于 `android-sdk/`，包含五个模块：
-
-| 模块 | 作用 |
-| --- | --- |
-| `d06-core` | 纯 Kotlin 事件模型和 D06 raw mouse 映射器 |
-| `d06-input` | Android `MotionEvent` / `KeyEvent` 解码器和 D06 设备匹配器 |
-| `d06-ble` | BLE/GATT UUID profile 和电量/服务发现客户端 |
-| `d06-remapper` | 基于 AccessibilityService 的重映射辅助模块，用于 Android 允许的动作 |
-| `d06-sample` | 用于硬件验证的实时事件控制台应用 |
-
-最低 SDK：
-
-- `d06-core`、`d06-input`、`d06-ble`：minSdk 23
-- `d06-remapper`、`d06-sample`：minSdk 24，因为 Android 手势分发需要 API 24+
-
-### 构建 SDK
-
-```bash
-cd android-sdk
-./gradlew test assembleDebug
-```
-
-示例应用 debug APK 输出位置：
-
-```text
-android-sdk/d06-sample/build/outputs/apk/debug/d06-sample-debug.apk
-```
-
-### 安装示例应用
-
-连接一台已开启 USB 调试的 Android 设备：
+1. 通过蓝牙把 D06 Pro 配对到 Android 设备，或通过 USB-OTG 连接 2.4 GHz 接收器。
+2. 构建并安装示例应用：
 
 ```bash
 cd android-sdk
 ./gradlew :d06-sample:installDebug
 ```
 
-然后通过蓝牙配对 D06 Pro，打开 **D06 SDK Sample**，并在屏幕上操作 D06。示例应用会打印解码后的 D06 事件。
+3. 打开 **D06 SDK Sample**。
+4. 按按键、移动鼠标板。应用会显示解码后的 D06 事件。
 
-### 在 Android 应用中使用 SDK
+目前仓库里还没有打包好的用户版 APK。你仍然需要 Gradle/Android Studio，或让别人帮你构建示例 APK。
 
-本地开发时，把模块添加到你的应用 `settings.gradle.kts`：
+## Linux 简单使用
+
+列出可能的 D06 输入设备：
+
+```bash
+python3 tools/linux/d06_evdev.py --list
+```
+
+打印解码后的事件：
+
+```bash
+python3 tools/linux/d06_evdev.py --seconds 30
+```
+
+如果 Linux 阻止访问 `/dev/input/event*`，可以用 `sudo`，加入 `input` 用户组，或安装 `tools/linux/99-d06-pro.rules` 里的 udev 规则模板。
+
+Linux 工具只打印事件。它不会接管鼠标，也不会阻止普通指针移动。
+
+## 按键和手势映射
+
+| D06 动作 | 主机看到的输入 | SDK 事件 |
+| --- | --- | --- |
+| 左键 | 鼠标左键按下/抬起 | `LeftDown`、`LeftUp` |
+| 右键 | 鼠标右键按下/抬起 | `RightDown`、`RightUp` |
+| 中键 | 鼠标中键按下/抬起 | `MiddleDown`、`MiddleUp` |
+| 向上滚动 | 鼠标滚轮正向一步 | `Scroll(Up, units)` |
+| 向下滚动 | 鼠标滚轮反向一步 | `Scroll(Down, units)` |
+| 鼠标板向右 | 相对 `+X` 移动 | `MousepadMove(+dx, 0)` |
+| 鼠标板向左 | 相对 `-X` 移动 | `MousepadMove(-dx, 0)` |
+| 鼠标板向上 | 相对 `-Y` 移动 | `MousepadMove(0, -dy)` |
+| 鼠标板向下 | 相对 `+Y` 移动 | `MousepadMove(0, +dy)` |
+| 鼠标板点击 | 与左键相同的模式 | 只有启用点击检测时才是 `MousepadTap` |
+| 鼠标板双击 | 连续左键点击 | 连续 tap/click 事件 |
+
+说明书里可能写着“下一个视频”、“点赞”、“拍照”等动作。在设备层面，它们通常仍然只是鼠标、键盘或媒体控制事件。具体含义由目标应用决定。
+
+## Android SDK 开发者用法
+
+SDK 位于 `android-sdk/`。
+
+| 模块 | 用途 |
+| --- | --- |
+| `d06-core` | 纯 Kotlin D06 事件模型和映射器 |
+| `d06-input` | Android `MotionEvent` / `KeyEvent` 解码器 |
+| `d06-ble` | BLE/GATT 元数据和电量辅助工具 |
+| `d06-remapper` | 受限的 AccessibilityService 重映射辅助工具 |
+| `d06-sample` | 用于真机测试的示例应用 |
+
+构建全部模块：
+
+```bash
+cd android-sdk
+./gradlew test assembleDebug
+```
+
+发布到 Maven local：
+
+```bash
+cd android-sdk
+./gradlew publishToMavenLocal
+```
+
+本地源码开发时，可以从相邻 clone 引入模块：
 
 ```kotlin
 include(":d06-core")
-project(":d06-core").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-core")
+project(":d06-core").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-core")
 
 include(":d06-input")
-project(":d06-input").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-input")
+project(":d06-input").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-input")
 
 include(":d06-ble")
-project(":d06-ble").projectDir = file("../D06-Pro-Ring-Mouse/android-sdk/d06-ble")
+project(":d06-ble").projectDir = file("../d06-pro-ring-mouse-toolkit/android-sdk/d06-ble")
 ```
 
-然后在应用模块中添加依赖：
+基础解码用法：
 
 ```kotlin
-dependencies {
-    implementation(project(":d06-core"))
-    implementation(project(":d06-input"))
-    implementation(project(":d06-ble"))
-}
-```
-
-Maven local 或 JitPack 用法见 `android-sdk/README.zh-CN.md`。
-
-在 `Activity` 中解码 D06 输入：
-
-```kotlin
-import android.app.Activity
-import android.view.KeyEvent
-import android.view.MotionEvent
-import com.d06.sdk.core.D06EventTransformConfig
-import com.d06.sdk.input.D06Input
-import com.d06.sdk.input.D06InputConfig
-import com.d06.sdk.input.D06InputDiagnostics
-
 class MainActivity : Activity() {
-    private val diagnostics = D06InputDiagnostics()
     private val d06 = D06Input(
-        D06InputConfig(
-            detectMousepadTap = true,
-            eventTransform = D06EventTransformConfig(
-                movementSensitivity = 1.25f,
-                movementDeadzone = 2
-            )
-        ),
-        diagnostics
+        D06InputConfig(detectMousepadTap = true)
     ) { event ->
         // 处理 LeftDown、Scroll、MousepadMove、MousepadTap 等事件。
     }
@@ -151,117 +147,21 @@ class MainActivity : Activity() {
 }
 ```
 
-如果需要判断 Android 输入设备是否匹配 D06：
+完整 SDK 用法、重映射 preset、诊断日志和 BLE 权限见 [android-sdk/README.zh-CN.md](android-sdk/README.zh-CN.md)。
 
-```kotlin
-val isD06 = motionEvent.device?.let { d06.isD06Device(it) } == true
-```
+## Linux 和 Android 采集工具
 
-`D06Input` 只会消费已识别的 D06 设备元数据，或 Android 没有暴露设备元数据的事件。如果你的设备显示为不同名称/VID/PID，把它加到 `D06InputConfig`。
-
-如果高级集成需要拿到解码后的事件列表而不是回调，可以直接使用 `D06InputDecoder`。
-
-`d06-remapper` 支持自定义 preset：
-
-```kotlin
-val preset = D06RemapPreset("my-profile") {
-    on(D06Event.MousepadTap, D06RemapAction.Home)
-    on(D06Event.MiddleUp, D06RemapAction.Back)
-}
-val action = D06Remapper(preset).actionFor(D06Event.MousepadTap)
-```
-
-内置 preset：`Accessibility`、`Presentation`、`Media`、`MouseOnly`。`D06RemapValidator.validateForAccessibilityService(preset)` 可检查 AccessibilityService 不能直接执行的动作。
-
-诊断日志可导出 JSON Lines：
-
-```kotlin
-val jsonl = diagnostics.toJsonLines()
-```
-
-匹配器会识别两条已知路径：
-
-- Bluetooth HID：VID/PID `248a:0101`，名称包含 `D06` 或 `D06 Pro`
-- 通过 USB-OTG 使用的 2.4 GHz USB 接收器：VID/PID `248a:0401`，名称包含 `TK Wireless Receiver`
-
-USB 接收器路径在 Android 上仍然表现为普通 `MotionEvent` / `KeyEvent` 输入。它不需要蓝牙权限，但 Android 设备必须支持 USB host/OTG，并能把接收器识别为 HID 鼠标/键盘。
-
-### BLE 用法
-
-Android 12 及以上需要 `BLUETOOTH_CONNECT`：
-
-```xml
-<uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-```
-
-当应用已经获得运行时权限并拿到 `BluetoothDevice` 后：
-
-```kotlin
-import com.d06.sdk.ble.D06BleClient
-
-val client = D06BleClient(context)
-client.connect(bluetoothDevice)
-
-// 观察 client.state：
-// Idle、Connecting、Connected、ServicesDiscovered、BatteryLevel、Error
-```
-
-BLE 客户端用于元数据、电量和服务发现。它不会替代 Android 的 HID 栈，也不会写入 vendor 配置命令。
-
-### 重映射限制
-
-当你的应用有合法路径获得已解码的 `D06Event` 时，`d06-remapper` 可以帮助触发 Android 支持的无障碍动作，例如返回、主页或可分发的手势。
-
-普通 Android 应用没有系统 API 可以全局拦截并替换所有硬件 HID 鼠标事件。若需要完整的全局 HID 拦截，需要平台权限、自定义输入服务、root 级集成，或其它设备策略接口。
-
-## Linux Evdev 转换器
-
-Linux 支持是把已经通过 Windows Raw Input 验证过的映射翻译成 Linux `evdev` 事件。它不是重新逆向；它利用 Linux 标准的 HID 到 evdev 映射：
-
-| D06 动作 | Linux 事件 | JSON 事件 |
-| --- | --- | --- |
-| 左键 | `EV_KEY BTN_LEFT 1/0` | `LeftDown`、`LeftUp` |
-| 右键 | `EV_KEY BTN_RIGHT 1/0` | `RightDown`、`RightUp` |
-| 中键 | `EV_KEY BTN_MIDDLE 1/0` | `MiddleDown`、`MiddleUp` |
-| 上/下滚动 | `EV_REL REL_WHEEL +/-N` 或 `REL_WHEEL_HI_RES +/-120*N` | `Scroll(Up/Down, units)` |
-| 鼠标板移动 | `EV_REL REL_X/REL_Y` | `MousepadMove(dx, dy)` |
-| 如果暴露按钮 4/5 | `EV_KEY BTN_SIDE/BTN_EXTRA` | `UnknownButton(4/5, pressed)` |
-
-列出 Linux 输入节点和 D06 匹配原因：
-
-```bash
-python3 tools/linux/d06_evdev.py --list
-```
-
-从自动匹配到的 D06 节点输出 JSON Lines：
-
-```bash
-python3 tools/linux/d06_evdev.py --seconds 30
-```
-
-也可以显式指定节点：
-
-```bash
-python3 tools/linux/d06_evdev.py --node /dev/input/event12 --seconds 30
-```
-
-读取 `/dev/input/event*` 通常需要 root、`input` 组权限，或 udev 规则。第一个 Linux 里程碑只解码并打印事件；它不会 grab 设备、抑制普通鼠标行为，也不会发出替代输入。
-
-## 逆向工程工具
-
-Linux 工具：
+Linux：
 
 ```bash
 python3 tools/linux/d06_evdev.py --list
 python3 tools/linux/d06_evdev.py --seconds 10
 python3 tools/linux/d06_hid.py --list
 sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux/hid/hid_caps.json
-sudo python3 tools/linux/d06_hid.py --capture --seconds 10
-python3 -m pip install bleak
 python3 tools/linux/dump_d06_gatt.py --address AA:BB:CC:DD:EE:FF --out-dir artifacts/linux/gatt
 ```
 
-Android 工具，需要在已开启 USB 或无线调试的 Linux 主机上运行：
+在已开启 USB 或无线调试的 Android 设备上，从 Linux 主机运行：
 
 ```bash
 tools/android/d06_android_input.sh list
@@ -269,40 +169,20 @@ tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android/
 tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/input.txt
 ```
 
-这些采集可以用于：
+## 仓库结构
 
-- 判断某个控制发出的是鼠标、键盘还是消费者控制 report；
-- 检查按钮 flag 和滚轮 data；
-- 确认鼠标板轴方向；
-- 发现特定设备或模式下是否存在隐藏的按钮 4/5。
+| 路径 | 内容 |
+| --- | --- |
+| `android-sdk/` | Android SDK 模块和示例应用 |
+| `tools/` | Linux 和 Android 采集工具 |
+| `artifacts/` | 按 Android、Linux、历史主机采集分组的数据 |
+| `D06_PRO_RE.md` | 详细逆向工程记录 |
+| `docs/research/` | SDK 功能研究 |
+| `docs/superpowers/` | 实现规格和计划 |
 
-## 仍值得测试的功能
+## 安全和隐私
 
-- 如果物理设备有侧键/返回/前进键，测试鼠标按钮 4/5 行为。
-- HID 集合 `Col01` 的键盘模式输出。
-- HID 集合 `Col02` 的消费者/媒体控制输出。
-- 模式切换前后重复已知控制，观察行为变化。
-- 在允许访问 HID-over-GATT 的主机上测试电量通知和原始 HID report map。
-- vendor/Telink 服务通知。在协议明确前避免写入。
-
-## 当前验证状态
-
-已完成：
-
-- 历史 BLE/GATT 枚举和 HID collection/caps 解析
-- 已知控制的历史输入采集
-- Android SDK 构建和单元测试
-- Android 示例应用 debug 构建
-
-待完成：
-
-- 使用示例应用在真实 Android 设备上进行验证
-- 采集 D06 在具体手机/平板上的 Android 元数据
-- 在带蓝牙或 USB 接收器的 Linux 主机上实时验证 `evdev`/`hidraw`
-- 测试采集过程中未看到或未激活的控制
-
-## 安全说明
-
-- D06 vendor 服务类似 Telink OTA/config 服务。除非有明确协议和恢复方案，否则不要写入。
-- 采集数据可能包含你的具体蓝牙地址和设备 ID。如果发布 fork 或 issue，请注意这一点。
-- Android 重映射模块刻意保持保守，避免暗示 stock Android 可以做到系统级全局输入拦截。
+- 本项目不会刷写固件。
+- 本项目不会写入 vendor/Telink 服务。
+- 采集文件可能包含设备名、硬件 ID 或蓝牙地址。
+- Android 重映射保持保守，因为普通 Android 应用不能系统级替换所有硬件鼠标输入。

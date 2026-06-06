@@ -6,6 +6,6 @@ plugins {
 }
 
 allprojects {
-    group = "com.github.SupperTomato.D06-Pro-Ring-Mouse"
+    group = "com.github.SupperTomato.d06-pro-ring-mouse-toolkit"
     version = "0.2.0"
 }
