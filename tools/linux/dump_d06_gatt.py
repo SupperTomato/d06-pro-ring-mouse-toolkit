@@ -150,9 +150,9 @@ def _load_bleak() -> tuple[Any, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--address", default=None, help="BLE address, for example D1:0B:CB:55:CA:78")
+    parser.add_argument("--address", default=None, help="BLE address, for example AA:BB:CC:DD:EE:FF")
     parser.add_argument("--name", default="D06", help="Name substring used when --address is omitted")
-    parser.add_argument("--out-dir", type=Path, default=Path("artifacts/linux_gatt"), help="Output directory")
+    parser.add_argument("--out-dir", type=Path, default=Path("artifacts/linux/gatt"), help="Output directory")
     parser.add_argument("--timeout", type=float, default=10.0, help="BLE scan/connect timeout")
     parser.add_argument("--no-read", action="store_true", help="List services/chars without reading values")
     args = parser.parse_args(argv)

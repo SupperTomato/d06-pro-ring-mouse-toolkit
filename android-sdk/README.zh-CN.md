@@ -67,7 +67,7 @@ JitPack 使用方式：创建 GitHub release 或 tag，然后通过 `https://jit
 
 ## 将 SDK 添加到应用
 
-这些模块当前以源码形式使用。把模块添加到应用的 `settings.gradle.kts`：
+本地源码开发时，把模块添加到应用的 `settings.gradle.kts`：
 
 ```kotlin
 include(":d06-core")

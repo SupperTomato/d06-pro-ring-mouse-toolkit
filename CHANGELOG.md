@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Organize capture artifacts by platform and capture surface.
+- Add `artifacts/README.md` and `tools/README.md` indexes.
 - Replace Windows-only capture scripts with Linux `evdev`/`hidraw`/BlueZ helpers and Android `adb getevent` tooling.
 - Remove all Windows-only shell script files and documentation references.
 

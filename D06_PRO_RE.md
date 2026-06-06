@@ -10,8 +10,8 @@ Date: 2026-06-04
 ## Device Identity
 
 - Advertised/Windows name: `D06 Pro`
-- BLE address: `D1:0B:CB:55:CA:78`
-- Windows BLE instance: `BTHLE\DEV_D10BCB55CA78\7&9B5A8DB&0&D10BCB55CA78`
+- BLE address: redacted from docs; historical capture artifacts may still include host/device IDs.
+- Windows BLE instance: redacted from docs; historical capture artifacts may still include host/device IDs.
 - VID source: `0x02` (Bluetooth SIG-assigned Device ID vendor ID)
 - VID: `0x248A`
 - PID: `0x0101`
@@ -113,8 +113,8 @@ Likely layout from parsed caps:
 
 Capture artifacts:
 
-- `artifacts/raw_input_events.json`: mouse movement plus left/right click sample
-- `artifacts/raw_input_events_controls.json`: wheel/scroll sample
+- `artifacts/windows/raw-input/raw_input_events.json`: mouse movement plus left/right click sample
+- `artifacts/windows/raw-input/raw_input_events_controls.json`: wheel/scroll sample
 
 Confirmed from Raw Input:
 
@@ -136,26 +136,26 @@ No keyboard or consumer-control events were captured in the two manual capture w
 
 | Physical control | Artifact | Source collection | Observed event |
 | --- | --- | --- | --- |
-| Left click | `artifacts/button_left_click.json` | Mouse `Col03` | `0x0001` down, `0x0002` up |
-| Right click | `artifacts/button_right_click.json` | Mouse `Col03` | `0x0004` down, `0x0008` up |
-| Middle button click | `artifacts/button_middle_click.json` | Mouse `Col03` | `0x0010` down, `0x0020` up |
-| Middle button click repeat | `artifacts/button_middle_click_repeat.json` | Mouse `Col03` | Repeated as `0x0010/0x0020` |
-| Middle button click repeat 2 | `artifacts/button_middle_click_repeat2.json` | Mouse `Col03` | Repeated as `0x0010/0x0020` |
-| Left then right repeat | `artifacts/button_left_right_repeat.json` | Mouse `Col03` | Left repeated as `0x0001/0x0002`; right repeated as `0x0004/0x0008` |
-| Scroll up/down | `artifacts/button_scroll_up_down.json` | Mouse `Col03` | Wheel flag `0x0400`; up emitted `+120`, down emitted `-120` |
-| Scroll up/down repeat | `artifacts/button_scroll_up_down_repeat.json` | Mouse `Col03` | Repeated as wheel flag `0x0400`; up `+120`, down `-120` |
-| Scroll up loose | `artifacts/gesture_scroll_up_loose.json` | Mouse `Col03` | Wheel flag `0x0400`; user-labeled scroll up emitted only `+120` |
-| Scroll down loose | `artifacts/gesture_scroll_down_loose.json` | Mouse `Col03` | Wheel flag `0x0400`; user-labeled scroll down emitted only `-120` |
-| Mousepad mixed motion | `artifacts/mousepad_motion_axes_repeat.json` | Mouse `Col03` | Mixed-direction capture; useful for confirming relative motion, not for final direction labels |
-| Mousepad right | `artifacts/gesture_mousepad_right_loose.json` | Mouse `Col03` | Dominant `+X` motion |
-| Mousepad left | `artifacts/gesture_mousepad_left_loose.json` | Mouse `Col03` | Dominant `-X` motion |
-| Mousepad up | `artifacts/gesture_mousepad_up_loose.json` | Mouse `Col03` | Dominant `-Y` motion |
-| Mousepad down | `artifacts/gesture_mousepad_down_loose.json` | Mouse `Col03` | Dominant `+Y` motion |
-| Mousepad tap | `artifacts/gesture_mousepad_tap.json` | Mouse `Col03` | Emits left click: `0x0001` down, `0x0002` up; minor incidental motion possible |
-| Mousepad double tap | `artifacts/gesture_touchpad_double_tap.json` | Mouse `Col03` | Emits repeated left clicks: `0x0001` down, `0x0002` up; no distinct double-tap HID event observed |
-| Mousepad tap-hold-drag | `artifacts/gesture_touchpad_tap_hold_drag.json` | Mouse `Col03` | Emits pointer motion only in this capture; no held left-button state observed |
-| Left long press | `artifacts/button_left_long_press.json` | Mouse `Col03` | Emits normal held left button: `0x0001` down, `0x0002` up; no keyboard/consumer event observed |
-| Right long press | `artifacts/button_right_long_press.json` | Mouse `Col03` | Emits normal held right button: `0x0004` down, `0x0008` up; no keyboard/consumer event observed |
+| Left click | `artifacts/windows/raw-input/button_left_click.json` | Mouse `Col03` | `0x0001` down, `0x0002` up |
+| Right click | `artifacts/windows/raw-input/button_right_click.json` | Mouse `Col03` | `0x0004` down, `0x0008` up |
+| Middle button click | `artifacts/windows/raw-input/button_middle_click.json` | Mouse `Col03` | `0x0010` down, `0x0020` up |
+| Middle button click repeat | `artifacts/windows/raw-input/button_middle_click_repeat.json` | Mouse `Col03` | Repeated as `0x0010/0x0020` |
+| Middle button click repeat 2 | `artifacts/windows/raw-input/button_middle_click_repeat2.json` | Mouse `Col03` | Repeated as `0x0010/0x0020` |
+| Left then right repeat | `artifacts/windows/raw-input/button_left_right_repeat.json` | Mouse `Col03` | Left repeated as `0x0001/0x0002`; right repeated as `0x0004/0x0008` |
+| Scroll up/down | `artifacts/windows/raw-input/button_scroll_up_down.json` | Mouse `Col03` | Wheel flag `0x0400`; up emitted `+120`, down emitted `-120` |
+| Scroll up/down repeat | `artifacts/windows/raw-input/button_scroll_up_down_repeat.json` | Mouse `Col03` | Repeated as wheel flag `0x0400`; up `+120`, down `-120` |
+| Scroll up loose | `artifacts/windows/raw-input/gesture_scroll_up_loose.json` | Mouse `Col03` | Wheel flag `0x0400`; user-labeled scroll up emitted only `+120` |
+| Scroll down loose | `artifacts/windows/raw-input/gesture_scroll_down_loose.json` | Mouse `Col03` | Wheel flag `0x0400`; user-labeled scroll down emitted only `-120` |
+| Mousepad mixed motion | `artifacts/windows/raw-input/mousepad_motion_axes_repeat.json` | Mouse `Col03` | Mixed-direction capture; useful for confirming relative motion, not for final direction labels |
+| Mousepad right | `artifacts/windows/raw-input/gesture_mousepad_right_loose.json` | Mouse `Col03` | Dominant `+X` motion |
+| Mousepad left | `artifacts/windows/raw-input/gesture_mousepad_left_loose.json` | Mouse `Col03` | Dominant `-X` motion |
+| Mousepad up | `artifacts/windows/raw-input/gesture_mousepad_up_loose.json` | Mouse `Col03` | Dominant `-Y` motion |
+| Mousepad down | `artifacts/windows/raw-input/gesture_mousepad_down_loose.json` | Mouse `Col03` | Dominant `+Y` motion |
+| Mousepad tap | `artifacts/windows/raw-input/gesture_mousepad_tap.json` | Mouse `Col03` | Emits left click: `0x0001` down, `0x0002` up; minor incidental motion possible |
+| Mousepad double tap | `artifacts/windows/raw-input/gesture_touchpad_double_tap.json` | Mouse `Col03` | Emits repeated left clicks: `0x0001` down, `0x0002` up; no distinct double-tap HID event observed |
+| Mousepad tap-hold-drag | `artifacts/windows/raw-input/gesture_touchpad_tap_hold_drag.json` | Mouse `Col03` | Emits pointer motion only in this capture; no held left-button state observed |
+| Left long press | `artifacts/windows/raw-input/button_left_long_press.json` | Mouse `Col03` | Emits normal held left button: `0x0001` down, `0x0002` up; no keyboard/consumer event observed |
+| Right long press | `artifacts/windows/raw-input/button_right_long_press.json` | Mouse `Col03` | Emits normal held right button: `0x0004` down, `0x0008` up; no keyboard/consumer event observed |
 
 Corrected mousepad direction mapping:
 
@@ -242,16 +242,16 @@ Useful Linux commands:
 ```bash
 python3 tools/linux/d06_evdev.py --list
 python3 tools/linux/d06_evdev.py --seconds 12
-sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
-python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux/hid/hid_caps.json
+python3 tools/linux/dump_d06_gatt.py --address AA:BB:CC:DD:EE:FF --out-dir artifacts/linux/gatt
 ```
 
 Useful Android commands from a Linux host:
 
 ```bash
 tools/android/d06_android_input.sh list
-tools/android/d06_android_input.sh capture --seconds 12 --out artifacts/android_getevent.txt
-tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
+tools/android/d06_android_input.sh capture --seconds 12 --out artifacts/android/getevent/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/input.txt
 ```
 
 ## Remaining Gaps

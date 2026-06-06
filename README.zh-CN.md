@@ -22,7 +22,7 @@ D06 Pro 在主机上表现为一个 Bluetooth HID 设备，包含鼠标、键盘
 | 路径 | 用途 |
 | --- | --- |
 | `D06_PRO_RE.md` | 详细逆向工程报告和功能审计 |
-| `artifacts/` | 已标注的 Raw Input、HID 和 GATT 采集数据 |
+| `artifacts/` | 按平台分组的采集数据 |
 | `tools/` | Linux 和 Android 采集/枚举脚本 |
 | `android-sdk/` | 多模块 Kotlin/Android SDK 和示例应用 |
 | `docs/superpowers/specs/` | SDK 设计说明 |
@@ -90,7 +90,7 @@ cd android-sdk
 
 ### 在 Android 应用中使用 SDK
 
-当前 SDK 以源码模块形式使用，尚未发布到 Maven。把模块添加到你的应用 `settings.gradle.kts`：
+本地开发时，把模块添加到你的应用 `settings.gradle.kts`：
 
 ```kotlin
 include(":d06-core")
@@ -112,6 +112,8 @@ dependencies {
     implementation(project(":d06-ble"))
 }
 ```
+
+Maven local 或 JitPack 用法见 `android-sdk/README.zh-CN.md`。
 
 在 `Activity` 中解码 D06 输入：
 
@@ -253,18 +255,18 @@ Linux 工具：
 python3 tools/linux/d06_evdev.py --list
 python3 tools/linux/d06_evdev.py --seconds 10
 python3 tools/linux/d06_hid.py --list
-sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux/hid/hid_caps.json
 sudo python3 tools/linux/d06_hid.py --capture --seconds 10
 python3 -m pip install bleak
-python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+python3 tools/linux/dump_d06_gatt.py --address AA:BB:CC:DD:EE:FF --out-dir artifacts/linux/gatt
 ```
 
 Android 工具，需要在已开启 USB 或无线调试的 Linux 主机上运行：
 
 ```bash
 tools/android/d06_android_input.sh list
-tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android_getevent.txt
-tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
+tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android/getevent/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/input.txt
 ```
 
 这些采集可以用于：

@@ -7,7 +7,7 @@ Create a Kotlin Android SDK that turns D06 Pro ring mouse input into stable, typ
 Primary source material:
 
 - `D06_PRO_RE.md`
-- `artifacts/hid_caps.json`
+- `artifacts/windows/hid/hid_caps.json`
 - labeled Raw Input artifacts under `artifacts/`
 - Android platform APIs: `MotionEvent`, `KeyEvent`, `InputDevice`, `BluetoothGatt`, Bluetooth runtime permissions, and `AccessibilityService`
 

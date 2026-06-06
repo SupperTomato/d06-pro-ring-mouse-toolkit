@@ -22,7 +22,7 @@ This project does not flash firmware, modify the mouse, or write to the vendor/T
 | Path | Purpose |
 | --- | --- |
 | `D06_PRO_RE.md` | Detailed reverse-engineering report and feature audit |
-| `artifacts/` | Labeled Raw Input, HID, and GATT capture data |
+| `artifacts/` | Capture data grouped by platform |
 | `tools/` | Linux and Android capture/enumeration scripts |
 | `android-sdk/` | Multi-module Kotlin/Android SDK and sample app |
 | `docs/superpowers/specs/` | SDK design notes |
@@ -90,7 +90,7 @@ Then pair the D06 Pro over Bluetooth, open **D06 SDK Sample**, and interact with
 
 ### Use The SDK In An Android App
 
-The SDK is currently source-based, not published to Maven. Add the modules to your app's `settings.gradle.kts`:
+For local development, add the modules to your app's `settings.gradle.kts`:
 
 ```kotlin
 include(":d06-core")
@@ -112,6 +112,8 @@ dependencies {
     implementation(project(":d06-ble"))
 }
 ```
+
+For Maven local or JitPack usage, see `android-sdk/README.md`.
 
 Decode D06 input in an `Activity`:
 
@@ -270,18 +272,18 @@ Linux tools:
 python3 tools/linux/d06_evdev.py --list
 python3 tools/linux/d06_evdev.py --seconds 10
 python3 tools/linux/d06_hid.py --list
-sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux/hid/hid_caps.json
 sudo python3 tools/linux/d06_hid.py --capture --seconds 10
 python3 -m pip install bleak
-python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+python3 tools/linux/dump_d06_gatt.py --address AA:BB:CC:DD:EE:FF --out-dir artifacts/linux/gatt
 ```
 
 Android tools, from a Linux host with USB or wireless debugging:
 
 ```bash
 tools/android/d06_android_input.sh list
-tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android_getevent.txt
-tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
+tools/android/d06_android_input.sh capture --seconds 10 --out artifacts/android/getevent/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android/dumpsys/input.txt
 ```
 
 The captures are useful for:

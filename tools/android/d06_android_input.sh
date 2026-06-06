@@ -5,8 +5,8 @@ usage() {
   cat <<'EOF'
 Usage:
   tools/android/d06_android_input.sh list [--serial SERIAL]
-  tools/android/d06_android_input.sh capture [--serial SERIAL] [--device /dev/input/eventX] [--seconds 15] [--out artifacts/android_getevent.txt]
-  tools/android/d06_android_input.sh dump-input [--serial SERIAL] [--out artifacts/android_input.txt]
+  tools/android/d06_android_input.sh capture [--serial SERIAL] [--device /dev/input/eventX] [--seconds 15] [--out artifacts/android/getevent/android_getevent.txt]
+  tools/android/d06_android_input.sh dump-input [--serial SERIAL] [--out artifacts/android/dumpsys/input.txt]
 
 Environment:
   ADB=/path/to/adb        Override adb binary.
@@ -110,7 +110,7 @@ case "$cmd" in
     ;;
 
   dump-input)
-    out="artifacts/android_input.txt"
+    out="artifacts/android/dumpsys/input.txt"
     while [[ $# -gt 0 ]]; do
       case "$1" in
         --serial)

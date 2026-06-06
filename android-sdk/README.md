@@ -67,7 +67,7 @@ For JitPack, create a GitHub release or tag, then depend on the modules from `ht
 
 ## Add The SDK To An App
 
-The modules are source-based. Add the modules to your app's `settings.gradle.kts`:
+For local source development, add the modules to your app's `settings.gradle.kts`:
 
 ```kotlin
 include(":d06-core")
