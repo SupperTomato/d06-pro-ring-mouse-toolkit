@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Replace Windows-only capture scripts with Linux `evdev`/`hidraw`/BlueZ helpers and Android `adb getevent` tooling.
+- Remove all Windows-only shell script files and documentation references.
+
 ## 0.2.0 - 2026-06-05
 
 - Add custom Android remap presets and built-in preset profiles.

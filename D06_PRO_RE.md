@@ -5,7 +5,7 @@ Date: 2026-06-04
 ## Host Access Notes
 
 - The Linux shell is WSL2 and does not expose the host Bluetooth stack, BlueZ, `/dev/input`, or `/dev/hidraw`.
-- Windows sees the device and was used for enumeration/capture via PowerShell, WinRT, `hid.dll`, and Raw Input.
+- Earlier enumeration/capture used host OS Bluetooth, HID, and raw input APIs before the repo moved to Linux/Android tooling.
 
 ## Device Identity
 
@@ -232,22 +232,30 @@ Important distinction: the manuals describe several phone/video/PPT behaviors as
 
 ## Tools Added
 
-- `tools/dump_d06_gatt.ps1`: WinRT BLE service/characteristic enumerator.
-- `tools/dump_hid_caps.ps1`: `hid.dll` parser for HID top-level collection caps.
-- `tools/capture_hid_reports.ps1`: direct HID report reader. It confirms Windows denies direct read access to D06 keyboard/mouse collections.
-- `tools/list_raw_input_devices.ps1`: Raw Input device source lister.
-- `tools/capture_raw_input.ps1`: event capture by source device path.
+- `tools/linux/d06_evdev.py`: Linux `evdev` lister/translator for decoded D06 JSON Lines.
+- `tools/linux/d06_hid.py`: Linux `hidraw` lister, HID report descriptor dumper, and raw report capture helper.
+- `tools/linux/dump_d06_gatt.py`: Linux BlueZ/Bleak BLE service/characteristic dumper.
+- `tools/android/d06_android_input.sh`: Android `adb getevent`/`dumpsys input` capture helper.
 
-Useful commands from WSL:
+Useful Linux commands:
 
 ```bash
-rtk powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/dump_hid_caps.ps1 -Filter d10bcb55ca78 -OutFile artifacts/hid_caps.json
-rtk powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/list_raw_input_devices.ps1 -Filter 'd10bcb55ca78|02248a'
-rtk powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./tools/capture_raw_input.ps1 -Filter d10bcb55ca78 -OutFile artifacts/raw_input_events.json -Seconds 12
+python3 tools/linux/d06_evdev.py --list
+python3 tools/linux/d06_evdev.py --seconds 12
+sudo python3 tools/linux/d06_hid.py --dump --out artifacts/linux_hid_caps.json
+python3 tools/linux/dump_d06_gatt.py --address D1:0B:CB:55:CA:78 --out-dir artifacts/linux_gatt
+```
+
+Useful Android commands from a Linux host:
+
+```bash
+tools/android/d06_android_input.sh list
+tools/android/d06_android_input.sh capture --seconds 12 --out artifacts/android_getevent.txt
+tools/android/d06_android_input.sh dump-input --out artifacts/android_input.txt
 ```
 
 ## Remaining Gaps
 
-- Raw HID report bytes for keyboard/mouse are blocked by Windows (`Access is denied`) while the system owns those collections.
-- WinRT GATT returns `AccessDenied` for the HID service, so the HID Report Map characteristic could not be read from Windows.
-- To fully confirm report byte offsets and descriptor bytes, pair the device to a Linux host with BlueZ/hidraw access, use a BLE sniffer, or temporarily inspect from a host where the HID service is not claimed by the OS HID driver.
+- Raw HID report bytes and descriptor bytes still need live capture on a Linux host with `/dev/hidraw` access.
+- HID-over-GATT report map access still depends on whether BlueZ exposes the HID service before the OS HID driver claims it.
+- Android raw input metadata still needs capture through `adb getevent` and SDK diagnostics on real phones/tablets.
